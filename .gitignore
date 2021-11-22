@@ -1,0 +1,16 @@
+# Visual Studio Intellisense
+*.sdf
+
+# Visual Studio solution user options
+*.suo
+
+# Visual Studio user specific stuff
+*.user
+
+# Visual Studio temp file (only when VS open)
+*.opensdf
+
+# directories
+.vs
+bin/
+build/
