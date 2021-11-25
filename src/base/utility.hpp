@@ -19,6 +19,15 @@ inline FW::Mat4f makeMat4f(const FW::Vec4f& a, const FW::Vec4f& b, const FW::Vec
 	return A;
 }
 
+inline FW::Mat4f combineToMat4f(const FW::Mat3f& rotation, const FW::Vec3f& translation) {
+	FW::Mat4f result;
+	result.setCol(0, FW::Vec4f(rotation.getCol(0), 0));
+	result.setCol(1, FW::Vec4f(rotation.getCol(1), 0));
+	result.setCol(2, FW::Vec4f(rotation.getCol(2), 0));
+	result.setCol(3, FW::Vec4f(translation, 1));
+	return result;
+}
+
 // http://stackoverflow.com/questions/2270726/how-to-determine-the-size-of-an-array-of-strings-in-c
 template <typename T, std::size_t N>
 char (&static_sizeof_array( T(&)[N] ))[N];   // declared, not defined

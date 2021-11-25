@@ -6,13 +6,13 @@
 #include <vector>
 #include <map>
 
-static const unsigned WEIGHTS_PER_VERTEX = 8u;
-static const unsigned ANIM_JOINT_COUNT = 100u;
-struct AnimFrame
-{
-	FW::Vec3f position;
-	FW::Vec3f angles[ ANIM_JOINT_COUNT ];
-};
+//static const unsigned WEIGHTS_PER_VERTEX = 8u;
+//static const unsigned ANIM_JOINT_COUNT = 100u;
+//struct AnimFrame
+//{
+//	FW::Vec3f position;
+//	FW::Vec3f angles[ ANIM_JOINT_COUNT ];
+//};
 
 struct Joint
 {
@@ -39,8 +39,8 @@ struct Joint
 	//
 	std::string name;
 
-	// Indices of the child joints.
-	std::vector<int> children;
+	// Index of child joint (-1 if doesn't exist)
+	int child;
 	// Index of parent joint (-1 for root).
 	int parent;
 };
@@ -48,37 +48,26 @@ struct Joint
 class Skeleton
 {
 public:
-	void					load(std::string skeleton_file);
-	float					loadBVH(std::string skeleton_file);
-
 	int						getJointIndex(std::string name);
 	std::string				getJointName(unsigned index) const;
 	FW::Vec3f				getJointRotation(unsigned index) const;
 	int						getJointParent(unsigned index) const;
 
-	void					setAnimationFrame(int frame);
 	void					setJointRotation(unsigned index, FW::Vec3f euler_angles);
 	void					incrJointRotation(unsigned index, FW::Vec3f euler_angles);
-	
+
+	void					addJoint();
+
 	void					updateToWorldTransforms();
 	float					normalizeScale();
 
 	std::vector<FW::Mat4f>	getToWorldTransforms();
-	std::vector<FW::Mat4f>	getSSDTransforms();
-
 	size_t					getNumJoints() { return joints_.size(); }
 
 private:
-	void					setAnimationState();
-	void					loadJoint(std::ifstream& in, int parent, std::string name, std::vector<FW::Vec3i>& axisPermutation);
-	void					loadAnim(std::ifstream& in, std::vector<FW::Vec3i>& axisPermutation);
 	void					updateToWorldTransforms(unsigned joint_index, const FW::Mat4f& parent_to_world);
-
 	void					computeToBindTransforms();
 
 	std::vector<Joint>		joints_;
 	std::map<std::string, int> jointNameMap;
-	std::vector<AnimFrame>  animationData;
-	int						animationFrame;
-	bool					animationMode = false;
 };

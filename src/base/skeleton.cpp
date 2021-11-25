@@ -46,15 +46,23 @@ void Skeleton::incrJointRotation(unsigned index, Vec3f euler_angles) {
 	setJointRotation(index, getJointRotation(index) + euler_angles);
 }
 
+void Skeleton::addJoint()
+{
+	Joint j;
+	j.rotation = Vec3f(0, 0, 0);
+	j.position = Vec3f(0, 0, 0);
+	j.parent = -1;
+	j.child = -1;
+	j.name = "new joint";
+
+	joints_.push_back(j);
+}
+
 void Skeleton::updateToWorldTransforms() {
 	// Here we just initiate the hierarchical transformation from the root node (at index 0)
 	// and an identity transformation, precisely as in the lecture slides on hierarchical modeling.
-	if (!animationMode)
-		updateToWorldTransforms(0, Mat4f());
-	else
-		// If we're running an animation, we need to set all of the joint rotations of the current frame
-		// and translate the root so it matches the animation.
-		setAnimationState();
+	updateToWorldTransforms(0, Mat4f());
+
 }
 
 void Skeleton::updateToWorldTransforms(unsigned joint_index, const Mat4f& parent_to_world) {
@@ -63,11 +71,16 @@ void Skeleton::updateToWorldTransforms(unsigned joint_index, const Mat4f& parent
 	
 	// visit
 	// current joint to world = parent joint to world trasform *  current joint to parent transform
-	Mat4f curr_to_world = parent_to_world * joints_[joint_index].to_parent;
-	joints_[joint_index].to_world = curr_to_world;
-
-	// recurse to children, left to right
-	for (int child_index : joints_[joint_index].children) {
+	Mat4f curr_to_world;
+	int child_index = -1;
+	if (joints_.size() != 0) {
+		curr_to_world = parent_to_world * joints_[joint_index].to_parent;
+		joints_[joint_index].to_world = curr_to_world;
+		child_index = joints_[joint_index].child;
+	}
+	
+	// continue to child if it exists
+	if (child_index != -1) {
 		updateToWorldTransforms(child_index, curr_to_world);
 	}
 }
@@ -91,214 +104,6 @@ vector<Mat4f> Skeleton::getToWorldTransforms() {
 	return transforms;
 }
 
-vector<Mat4f> Skeleton::getSSDTransforms() {
-	updateToWorldTransforms();
-	// YOUR CODE HERE (R4)
-	// Compute the relative transformations between the bind pose and current pose,
-	// store the results in the vector "transforms". These are the transformations
-	// passed into the actual skinning code. (In the lecture slides' terms,
-	// these are the T_i * inv(B_i) matrices.)
-
-	vector<Mat4f> transforms(joints_.size());
-
-	for (size_t i = 0; i < joints_.size(); i++) {
-		Joint j = joints_[i];
-		transforms[i] = j.to_world * j.to_bind_joint;
-	}
-	
-	return transforms;
-}
-
-float Skeleton::loadBVH(string skeleton_file) {
-	ifstream in(skeleton_file);
-
-	std::vector<Vec3i> axisPermutation;
-
-	string s;
-	string line;
-	while (getline(in, line))
-	{
-		stringstream stream(line);
-		stream >> s;
-		
-		if (s == "ROOT")
-		{
-			string jointName;
-			stream >> jointName;
-			loadJoint(in, -1, jointName, axisPermutation);
-		}
-		else if (s == "MOTION")
-		{
-			loadAnim(in, axisPermutation);
-		}
-	}
-
-	float scale = normalizeScale();
-
-	// initially set to_parent matrices to identity
-	for (auto j = 0u; j < joints_.size(); ++j)
-		setJointRotation(j, Vec3f(0, 0, 0));
-
-	// this needs to be done while skeleton is still in bind pose
-	computeToBindTransforms();
-
-	return scale;
-}
-
-void Skeleton::loadJoint(ifstream& in, int parent, string name, std::vector<Vec3i>& axisPermutation)
-{
-	Joint j;
-	j.name = name;
-	j.parent = parent;
-
-	bool pushed = false;
-
-	int curIdx = -1;
-	string s;
-	string line;
-	while (getline(in, line))
-	{
-		stringstream stream(line);
-		stream >> s;
-		if (s == "JOINT")
-		{
-			string jointName;
-			stream >> jointName;
-			loadJoint(in, curIdx, jointName, axisPermutation);
-		}
-		else if (s == "End")
-		{
-			while (getline(in, line))
-			{
-				// Read End block so it doesn't get interpreted as a closing bracket or offset keyword
-				stringstream end(line);
-				end >> s;
-				if (s == "}")
-					break;
-			}
-		}
-		else if (s == "}")
-		{
-			return;
-		}
-		else if (s == "CHANNELS")
-		{
-			int channelCount;
-			stream >> channelCount;
-			if (channelCount == 6)
-				stream >> s >> s >> s;
-
-			Vec3i permutation;
-			for (int i = 0; i < 3; ++i)
-			{
-				stream >> s;
-				if (s == "Xrotation")
-					permutation[0] = i;
-				else if (s == "Yrotation")
-					permutation[1] = i;
-				else if (s == "Zrotation")
-					permutation[2] = i;
-			}
-			axisPermutation.push_back(permutation);
-		}
-		else if (s == "OFFSET")
-		{
-			Vec3f pos;
-			stream >> pos.x >> pos.y >> pos.z;
-			j.position = pos;
-
-			if (!pushed)
-			{
-				pushed = true;
-				joints_.push_back(j);
-				curIdx = int(joints_.size() - 1);
-
-				if (parent != -1)
-					joints_[parent].children.push_back(curIdx);
-			}
-			jointNameMap[name] = curIdx;
-		}
-	}
-}
-
-void Skeleton::loadAnim(ifstream& in, std::vector<Vec3i>& axisPermutation)
-{
-	string word;
-	in >> word;
-	int frames;
-	in >> frames;
-
-	animationData.resize(frames);
-
-	int frameNum = 0;
-	string line;
-
-	// Discard unused lines
-	getline(in, line);
-	getline(in, line);
-
-	// Load animation angle and position data for each frame
-	while (getline(in, line))
-	{
-		float* frameData = (float*)(animationData.data() + frameNum);
-		stringstream stream(line);
-		int i = 0;
-		while(stream.good())
-			stream >> frameData[i++];
-		frameNum++;
-	}
-
-	// Permute angle axes
-	Vec3f posAccum;
-	for (auto& f : animationData)
-	{
-		posAccum += f.position;
-		for (int i = 0; i < ANIM_JOINT_COUNT; ++i)
-		{
-			Vec3f angles = f.angles[i];
-			f.angles[i] = Vec3f(angles[axisPermutation[i].x], angles[axisPermutation[i].y], angles[axisPermutation[i].z]);
-		}
-	}
-
-	// Offset position so that average stays at origin
-	for (auto& f : animationData)
-		f.position -= posAccum / float(animationData.size());
-}
-
-void Skeleton::load(string skeleton_file) {	
-	ifstream in(skeleton_file);
-	Joint joint;
-	Vec3f pos;
-	int parent;
-	string name;
-	unsigned current_joint = 0;
-	while (in.good()) {
-		in >> pos.x >> pos.y >> pos.z >> parent >> name;
-		joint.name = name;
-		joint.parent = parent;
-		// set position of joint in parent's space
-		joint.position = pos;
-		if (in.good()) {
-			joints_.push_back(joint);
-			jointNameMap[name] = int(joints_.size() - 1);
-			if (current_joint == 0) {
-				assert(parent == -1 && "first node read should always be the root node");
-			} else {
-				assert(parent != -1 && "there should not be more than one root node");
-				joints_[parent].children.push_back(current_joint);
-			}
-			++current_joint;
-		}
-	}
-
-	// initially set to_parent matrices to identity
-	for (auto j = 0u; j < joints_.size(); ++j)
-		setJointRotation(j, Vec3f(0, 0, 0));
-
-	// this needs to be done while skeleton is still in bind pose
-	computeToBindTransforms();
-}
-
 // Make sure the skeleton is of sensible size.
 // Here we just search for the largest extent along any axis and divide by twice
 // that, effectively causing the model to fit in a [-0.5, 0.5]^3 cube.
@@ -311,8 +116,6 @@ float Skeleton::normalizeScale()
 	scale *= 2;
 	for (auto& j : joints_)
 		j.position /= scale;
-	for (auto& f : animationData)
-		f.position /= scale;
 
 	return scale;
 }
@@ -331,30 +134,4 @@ int Skeleton::getJointParent(unsigned index) const {
 
 int Skeleton::getJointIndex(string name) {
 	return jointNameMap[name];
-}
-
-void Skeleton::setAnimationFrame(int AnimationFrame)
-{
-	animationFrame = AnimationFrame;
-	animationMode = true;
-}
-
-void Skeleton::setAnimationState()
-{
-	// No actual animation exists.
-	if (!animationData.size()) {
-		animationMode = false;
-		updateToWorldTransforms(0, Mat4f());
-		return;
-	}
-
-	// Get the current position in the animation..
-	int frame = animationFrame % animationData.size();
-	auto& frameData = animationData[frame];
-	// .. and set all joint rotations accordingly.
-	for (int j = 0; j < ANIM_JOINT_COUNT; ++j)
-		setJointRotation(j, frameData.angles[j] * FW_PI / 180.0f);
-
-	// Also translate the root to the position given in the animation description.
-	updateToWorldTransforms(0, Mat4f::translate(frameData.position));
 }

@@ -235,11 +235,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\base\App.cpp" />
-    <ClCompile Include="src\base\skeleton.cpp" />
+    <ClCompile Include="src\base\robot.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\base\App.hpp" />
-    <ClInclude Include="src\base\skeleton.hpp" />
+    <ClInclude Include="src\base\robot.hpp" />
     <ClInclude Include="src\base\utility.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -712,10 +712,10 @@ void CommonControls::addSlider(F32* floatTarget, S32* intTarget, F32 minValue, F
 
     s->visible          = m_controlVisibility;
     s->stackWithPrevious = (m_sliderStackBegun && !m_sliderStackEmpty);
-    s->pos              = Vec2f(0.0f);
+    s->pos              = Vec2f(1.0f);
     s->size             = Vec2f(0.0f);
     s->blockPos         = Vec2f(0.0f);
-    s->blockSize        = Vec2f(0.0f);
+    s->blockSize        = Vec2f(3.0f);
 
     m_sliders.add(s);
     s->increaseKey->sliderIncrease.add(s);

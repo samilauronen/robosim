@@ -1,20 +1,17 @@
 #pragma once
 
-#include "skeleton.hpp"
+#include "robot.hpp"
 
 #include "gui/Window.hpp"
 #include "gui/CommonControls.hpp"
+#include "3d/CameraControls.hpp"
 
 #include <vector>
+#include <memory>
 
 namespace FW {
 
-struct Vertex
-{
-	Vec3f position;
-	Vec3f normal;
-	Vec3f color;
-};
+
 
 
 struct glGeneratedIndices
@@ -23,7 +20,7 @@ struct glGeneratedIndices
 	GLuint simple_shader, ssd_shader;
 
 	// Vertex array objects
-	GLuint simple_vao, ssd_vao;
+	GLuint simple_vao, ssd_vao, point_vao;
 
 	// Buffers
 	GLuint simple_vertex_buffer, ssd_vertex_buffer;
@@ -64,22 +61,17 @@ private:
 private:
 	Window			window_;
 	CommonControls	common_ctrl_;
+	CameraControls  camera_ctrl_;
 
-	DrawMode		drawmode_;
-	bool			shading_toggle_;
-	bool			shading_mode_changed_;
-	std::vector<Vec3f> joint_colors_;
+	DrawMode			drawmode_;
+	bool				shading_toggle_;
+	bool				shading_mode_changed_;
+	std::vector<Vec3f>	joint_colors_;
+	std::vector<float>  joint_angle_controls_;
 
 	glGeneratedIndices	gl_;
-	
-	float			camera_rotation_;
-	float			scale_ = 1.f;
 
-	Skeleton		skel_;
-
-	std::vector<Vertex> vertices_;
-
-	unsigned		selected_joint_;
+	std::unique_ptr<Robot>	rob_;
 };
 
 } // namespace FW
