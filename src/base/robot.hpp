@@ -16,10 +16,10 @@ struct Vertex
 };
 
 struct DhParam {
-	// d = offset
-	// a = link length
-	// alpha = twist
-	// theta = joint angle
+	// a(i-1) = previous link length (translation along x-axis of previous joint)
+	// alpha(i-1) = twist around the x-axis of previous joint
+	// d(i) = offset from current joint to next joint (translation along current z)
+	// theta(i) = angle from current joint to next joint (rotation along current z)
 	float d, a, alpha, theta;
 
 	// type of joint: 'R' = revolute, 'P' = prismatic
@@ -75,10 +75,12 @@ public:
 	void					setSelectedJoint(unsigned index) { selected_joint_ = index; };
 	unsigned				getSelectedJoint() { return selected_joint_; };
 	
-	void					updateToWorldTransforms();
-	std::vector<FW::Mat4f>	getToWorldTransforms();
+	void							updateToWorldTransforms();
+	std::vector<FW::Mat4f>			getToWorldTransforms();
+	const std::vector<Joint>&		getJoints();
 
 	size_t					getNumJoints() { return joints_.size(); };
+
 
 private:
 	Mat4f tool;

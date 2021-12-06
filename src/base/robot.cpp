@@ -59,8 +59,22 @@ void Robot::renderSkeleton()
 		// Draw a small coloured line segment from the joint's world position towards
 		// each of its local coordinate axes (the line length should be determined by "scale").
 		// The colors for each axis are already set for you below.
-		const float scale = 0.05;	// length for the coordinate system axes.
+		float scale = 0.1;	// length for the coordinate system axes.
 		glBegin(GL_LINES);
+
+		Vec3f o = Vec3f(0, 0, 0);
+
+		glColor3f(1, 0, 0); // red
+		glVertex3f(o.x, o.y, o.z);
+		glVertex3f(o.x + scale, o.y, o.z);
+		glColor3f(0, 1, 0); // green
+		glVertex3f(o.x, o.y, o.z);
+		glVertex3f(o.x, o.y + scale, o.z);
+		glColor3f(0, 0, 1); // blue
+		glVertex3f(o.x, o.y, o.z);
+		glVertex3f(o.x, o.y, o.z + scale);
+
+		scale = 0.05;	// length for the coordinate system axes.
 
 		// draw the x axis... ("right")
 		glColor3f(1, 0, 0); // red
@@ -103,22 +117,22 @@ vector<Vertex> Robot::getMeshVertices()
 
 	float linkLength = 0;
 	bool isOffset = false;
-	float start_thickness = 0.1f;
-	float thickness_reduction_factor = 0.8;
+	float init_link_thickness = 0.1f;
+	float init_joint_radius = 0.07f;
+	float init_joint_length = 0.2f;
+	float size_reduction_factor = 0.8;
 
-	JointMesh jointM(0.3f, 0.5f);
-	return jointM.getVertices();
-
+	// link meshes
 	for (unsigned i = 0; i < transforms.size(); i++) {
 		isOffset = !(FW::abs(joints_[i].p.a) > 0.00001);  // links use either offset (d) or link length (a). Both are not allowed by this implementation
 
+		// create link meshes
 		linkLength = FW::abs(isOffset ? joints_[i].p.d : joints_[i].p.a);
+		LinkMesh link(init_link_thickness * FW::pow(size_reduction_factor, i), linkLength);
 
-		LinkMesh m(start_thickness * FW::pow(thickness_reduction_factor, i), linkLength);
+		vector<Vertex> meshVertices = link.getVertices();
 
-		auto meshVertices = m.getVertices();
-
-		// figure out orientation and location
+		// translate and rotate link meshes to correct position
 		Vec3f joint_world_pos = transforms[i] * Vec3f(0, 0, 0);
 		int parent = i - 1;
 		if (parent != -1) {
@@ -150,12 +164,39 @@ vector<Vertex> Robot::getMeshVertices()
 		allVertices.insert(allVertices.end(), meshVertices.begin(), meshVertices.end());
 	}
 
+	// joint meshes
+	for (unsigned i = 0; i < transforms.size(); i++) {
+		float reduction = FW::pow(size_reduction_factor, i);
+		float radius = init_joint_radius * reduction;
+		float length = init_joint_length * reduction;
+
+		// create mesh
+		JointMesh joint(radius, length);
+		vector<Vertex> meshVertices = joint.getVertices();
+
+		// orient along the joint's z-axis
+		Mat3f jointBasisVecs = transforms[i].getXYZ();
+		Mat3f orientation = jointBasisVecs;
+
+		// translate to world position of joint 
+		Vec3f translation = transforms[i] * Vec3f(0, 0, 0);
+		//translation.z += length / 2;	// center the mesh
+
+		// create transformation matrix and transform vertices with it
+		Mat4f transformation = combineToMat4f(orientation, translation);
+		for (auto& v : meshVertices) {
+			v.position = transformation * v.position;
+			v.normal = transformation * v.normal;
+		}
+		allVertices.insert(allVertices.end(), meshVertices.begin(), meshVertices.end());
+	}
+
 	return allVertices;
 }
 
 void Robot::updateToWorldTransforms()
 {
-	Mat4f prev_to_world = baseToWorld_ * combineToMat4f(Mat3f::rotation(Vec3f(1, 0, 0), -FW_PI / 2), Vec3f(0, 0, 0));
+	Mat4f prev_to_world = baseToWorld_;
 	for (int i = 0; i < joints_.size(); i++) {
 		Joint& j = joints_[i];
 
@@ -182,6 +223,12 @@ void Robot::updateToWorldTransforms()
 		//j.to_world.print(); cerr << endl << endl;
 		prev_to_world = j.to_world;
 	}
+}
+
+const std::vector<Joint>& Robot::getJoints()
+{
+	updateToWorldTransforms();
+	return joints_;
 }
 
 std::vector<FW::Mat4f> Robot::getToWorldTransforms()
@@ -216,6 +263,7 @@ void Robot::loadDhParams()
 		}
 		else {
 			cerr << "Invalid joint type: " << p.sigma << endl;
+			continue;
 		}
 		
 		params_.push_back(p);
@@ -259,8 +307,10 @@ void Robot::buildModel()
 
 		// our final transform is now application of screw to z and screw to x in that order
 		Mat4f tf = z_screw * x_screw;
+		cerr << "tf" << endl;
+		tf.print(); cerr << endl;
 
-		cerr << "Trasformation to next joint from " << i << ":th joint:" << endl;
+		cerr << "Trasformation to prev joint from " << i << ":th joint:" << endl;
 		tf.inverted().print(); cerr << endl;
 		cerr << endl;
 
@@ -300,6 +350,7 @@ std::vector<Vertex> LinkMesh::getVertices()
 	// triangles of the face: v1,v2,v3 and v3,v4,v1
 	vertices.insert(vertices.end(), { v1,v2,v3, v3,v4,v1 });
 
+	// second square face
 	Vertex v5, v6, v7, v8;
 	v5.position = Vec3f(-offset, offset, length_);
 	v5.normal = Vec3f(-1, 1, 0).normalized();
@@ -313,7 +364,7 @@ std::vector<Vertex> LinkMesh::getVertices()
 	// triangles of the face: v5,v6,v7 and v7,v8,v5
 	vertices.insert(vertices.end(), { v5,v6,v7, v7,v8,v5 });
 
-	// triangles along other faces:
+	// triangles for faces along z-axis:
 	vertices.insert(vertices.end(), { v5,v1,v4, v5,v8,v4 });
 	vertices.insert(vertices.end(), { v5,v1,v2, v2,v5,v6 });
 	vertices.insert(vertices.end(), { v3,v4,v7, v8,v7,v4 });
@@ -336,17 +387,17 @@ std::vector<Vertex> JointMesh::getVertices()
 	
 	int numRingVerts = 32;
 
-	// first face to z = 0
-	auto face1 = makeFace(numRingVerts, 0);
-	vector<Vertex> face1Verts = face1.first;
+	// first face to z = -length/2
+	auto face1 = makeFace(numRingVerts, -depth_/2);
+	vector<Vertex> face1Tris = face1.first;
 	vector<Vertex> face1Ring = face1.second;
-	allVertices.insert(allVertices.end(), face1Verts.begin(), face1Verts.end());
+	allVertices.insert(allVertices.end(), face1Tris.begin(), face1Tris.end());
 
-	// second face to z = depth
-	auto face2 = makeFace(numRingVerts, depth_);
-	vector<Vertex> face2Verts = face2.first;
+	// second face to z = depth/2
+	auto face2 = makeFace(numRingVerts, depth_/2);
+	vector<Vertex> face2Tris = face2.first;
 	vector<Vertex> face2Ring = face2.second;
-	allVertices.insert(allVertices.end(), face2Verts.begin(), face2Verts.end());
+	allVertices.insert(allVertices.end(), face2Tris.begin(), face2Tris.end());
 
 	// now make the lateral surface
 	for (int i = 0; i < numRingVerts; i++) {
@@ -362,6 +413,7 @@ std::vector<Vertex> JointMesh::getVertices()
 		allVertices.insert(allVertices.end(), { v1,v2,v4 ,v1,v3,v4 });
 	}
 
+	// same color for all
 	for (auto& v : allVertices) {
 		v.color = Vec3f(1, 1, 0);
 	}
@@ -377,6 +429,7 @@ std::pair<std::vector<Vertex>, std::vector<Vertex>> JointMesh::makeFace(int numR
 	// middle vertex
 	Vertex v0;
 	v0.position = Vec3f(0, 0, z);
+	v0.normal = v0.position.normalized();
 
 	// generate ring of vertices around it
 	// x = r cos t, y= r sin t

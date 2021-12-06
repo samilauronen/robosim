@@ -16,6 +16,7 @@
 #include <type_traits>
 #include <numeric>
 #include <map>
+#include <iomanip>
 
 using namespace FW;
 using namespace std;
@@ -48,7 +49,7 @@ App::App(void)
 	for (auto i = 0u; i < 100; ++i)
 		joint_colors_.push_back(distinct_colors[i % 6]);
 
-	rob_ = std::make_unique<Robot>("src/base/params.txt", Vec3f(0, 0, 0));
+	rob_ = std::make_unique<Robot>("src/base/params.txt", Vec3f(-1, 0, 0));
 
 	// now robot knows how many joints it has, we can create sliders to control them
 	joint_angle_controls_.resize(rob_->getNumJoints());
@@ -323,12 +324,51 @@ void App::render() {
 	}
 	
 	// Show status messages.
-	common_ctrl_.message(sprintf("Use Home/End to rotate camera, Q/W to change selected bone\n    Arrow keys and PgUp/Dn to rotate selected bone\n    R to reset current bone rotation"), "instructions");
-	//auto joint_rot = skel_.getJointRotation(selected_joint_);
-	// auto joint_pos = Vec4f(skel_.getToWorldTransforms()[selected_joint_].getCol(3)).getXYZ();
-	/*common_ctrl_.message(sprintf("Joint \"%s\" selected, rotation %.2f %.2f %.2f",
-						skel_.getJointName(selected_joint_).c_str(),
-		joint_rot.x, joint_rot.y, joint_rot.z), "jointdata"); */
+	Joint selected_joint = rob_->getJoints()[rob_->getSelectedJoint()];
+
+	std::stringstream ss;
+
+	ss << "to_parent for joint " << rob_->getSelectedJoint() << "/" << rob_->getNumJoints() << endl;
+	ss << endl;
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++) {
+			float value1 = (F64)selected_joint.to_parent.get(i, j);
+			if (value1 < 0.001 && value1 > -0.001) value1 = 0;
+			ss << std::setw(3) << value1 << "  ";
+			
+		}
+		ss << endl;
+	}
+
+	ss << endl << endl;
+	ss <<"to_world for joint " << rob_->getSelectedJoint() << "/" << rob_->getNumJoints() << endl;
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++) {
+			float value1 = (F64)selected_joint.to_world.get(i, j);
+			if (value1 < 0.001 && value1 > -0.001) value1 = 0;
+			ss << std::setw(3) << value1 << "  ";
+		}
+		ss << endl;
+	}
+
+	common_ctrl_.message(ss.str().c_str(), "matrices");
+
+
+	/*ss.clear();
+	ss << "to_world for joint " << rob_->getSelectedJoint() << "/" << rob_->getNumJoints() << endl;
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++) {
+			float value = (F64)selected_joint.to_parent.get(i, j);
+			if (value < 0.001 && value > -0.001) value = 0;
+			ss << std::setw(3) << value << "  ";
+		}
+		ss << endl;
+	}*/
+
+	
 }
 
 void FW::init(void) {
