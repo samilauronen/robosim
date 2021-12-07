@@ -39,7 +39,7 @@ private:
 	{
 		MODE_SKELETON,
 		MODE_MESH_CPU,
-		MODE_MESH_GPU
+		MODE_MESH_WIREFRAME
 	};
 
 public:

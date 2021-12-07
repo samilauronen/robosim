@@ -49,7 +49,7 @@ App::App(void)
 	for (auto i = 0u; i < 100; ++i)
 		joint_colors_.push_back(distinct_colors[i % 6]);
 
-	rob_ = std::make_unique<Robot>("src/base/params.txt", Vec3f(-1, 0, 0));
+	rob_ = std::make_unique<Robot>("src/base/params.txt", Vec3f(1, 0, 0));
 
 	// now robot knows how many joints it has, we can create sliders to control them
 	joint_angle_controls_.resize(rob_->getNumJoints());
@@ -59,7 +59,7 @@ App::App(void)
 	common_ctrl_.showFPS(true);
 	common_ctrl_.addToggle((S32*)&drawmode_, MODE_SKELETON,			FW_KEY_1, "Draw joints and bones (1)");
 	common_ctrl_.addToggle((S32*)&drawmode_, MODE_MESH_CPU,			FW_KEY_2, "Draw mesh, SSD on CPU (2)");
-	common_ctrl_.addToggle((S32*)&drawmode_, MODE_MESH_GPU,			FW_KEY_3, "EXTRA: Draw mesh, SSD on GPU (3)");
+	common_ctrl_.addToggle((S32*)&drawmode_, MODE_MESH_WIREFRAME,	FW_KEY_3, "EXTRA: Draw mesh, SSD on GPU (3)");
 	common_ctrl_.addSeparator();
 	common_ctrl_.addToggle(&shading_toggle_,						FW_KEY_T, "Toggle shading mode (T)",	&shading_mode_changed_);
 
@@ -113,7 +113,7 @@ bool App::handleEvent(const Window::Event& ev) {
 
 	// set robot joint rotations to slider values
 	for (int i = 0; i < joint_angle_controls_.size(); i++) {
-		rob_->setJointRotation(i, joint_angle_controls_[i]);
+		rob_->setJointRotation(i + 1, joint_angle_controls_[i]);
 	}
 
 	camera_ctrl_.handleEvent(ev);
@@ -285,34 +285,31 @@ void App::render() {
 		glMatrixMode(GL_MODELVIEW);
 		glLoadMatrixf(&C(0,0));
 		rob_->renderSkeleton();
-	} else if (drawmode_ == MODE_MESH_CPU) {
-
+	}
+	else // mesh mode
+	{
+		if (drawmode_ == MODE_MESH_WIREFRAME) {
+			glPolygonMode(GL_FRONT, GL_LINE);
+			glPolygonMode(GL_BACK, GL_LINE);
+		}
 		std::vector<Vertex> vertices = rob_->getMeshVertices();
 
 		glBindBuffer(GL_ARRAY_BUFFER, gl_.simple_vertex_buffer);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 		glUseProgram(gl_.simple_shader);
 		glUniformMatrix4fv(gl_.simple_world_to_clip_uniform, 1, GL_FALSE, world_to_clip.getPtr());
 		glUniform1f(gl_.simple_shading_mix_uniform, shading_toggle_ ? 1.0f : 0.0f);
 		glBindVertexArray(gl_.simple_vao);
 		glDrawArrays(GL_TRIANGLES, 0, (int)vertices.size());
-		glBindVertexArray(0);
-		glUseProgram(0);
-	} /*else if (drawmode_ == MODE_MESH_GPU) {
-		auto ssd_transforms = skel_.getSSDTransforms();
 
-		glUseProgram(gl_.ssd_shader);
-		glUniformMatrix4fv(gl_.ssd_world_to_clip_uniform, 1, GL_FALSE, world_to_clip.getPtr());
-		glUniform1f(gl_.ssd_shading_mix_uniform, shading_toggle_ ? 1.0f : 0.0f);
-		glUniformMatrix4fv(gl_.ssd_transforms_uniform, GLsizei(ssd_transforms.size()), GL_FALSE, (GLfloat*)ssd_transforms.data());
-		
-		glBindVertexArray(gl_.ssd_vao);
-		glDrawArrays(GL_TRIANGLES, 0, (int)weighted_vertices_.size());
+		// reset polygon mode
+		glPolygonMode(GL_FRONT, GL_FILL);
+		glPolygonMode(GL_BACK, GL_FILL);
+
 		glBindVertexArray(0);
 		glUseProgram(0);
-	}*/
+	}
 	
 	// Check for OpenGL errors.
 	GLContext::checkErrors();
@@ -324,16 +321,14 @@ void App::render() {
 	}
 	
 	// Show status messages.
-	Joint selected_joint = rob_->getJoints()[rob_->getSelectedJoint()];
-
+	Link selected_link = rob_->getLinks()[rob_->getSelectedJoint()];
 	std::stringstream ss;
-
 	ss << "to_parent for joint " << rob_->getSelectedJoint() << "/" << rob_->getNumJoints() << endl;
 	ss << endl;
 	for (int i = 0; i < 4; i++)
 	{
 		for (int j = 0; j < 4; j++) {
-			float value1 = (F64)selected_joint.to_parent.get(i, j);
+			float value1 = (F64)selected_link.link_matrix.get(i, j);
 			if (value1 < 0.001 && value1 > -0.001) value1 = 0;
 			ss << std::setw(3) << value1 << "  ";
 			
@@ -346,7 +341,7 @@ void App::render() {
 	for (int i = 0; i < 4; i++)
 	{
 		for (int j = 0; j < 4; j++) {
-			float value1 = (F64)selected_joint.to_world.get(i, j);
+			float value1 = (F64)selected_link.to_world.get(i, j);
 			if (value1 < 0.001 && value1 > -0.001) value1 = 0;
 			ss << std::setw(3) << value1 << "  ";
 		}
@@ -354,21 +349,6 @@ void App::render() {
 	}
 
 	common_ctrl_.message(ss.str().c_str(), "matrices");
-
-
-	/*ss.clear();
-	ss << "to_world for joint " << rob_->getSelectedJoint() << "/" << rob_->getNumJoints() << endl;
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++) {
-			float value = (F64)selected_joint.to_parent.get(i, j);
-			if (value < 0.001 && value > -0.001) value = 0;
-			ss << std::setw(3) << value << "  ";
-		}
-		ss << endl;
-	}*/
-
-	
 }
 
 void FW::init(void) {
