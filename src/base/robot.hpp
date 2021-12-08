@@ -37,7 +37,12 @@ struct Link {
 	// dh parameters of this link
 	DhParam p;
 
+	// components of the link transformation matrix
 	// calculated from the DH parameters of this link
+	FW::Mat4f z_screw;
+	FW::Mat4f x_screw;
+
+	// combination of applying z_screw and  then x_screw
 	// relates this link's frame to the frame of the previous link
 	FW::Mat4f link_matrix;
 
@@ -55,9 +60,9 @@ public:
 	const Mat4f& getWorldToBase() const { return worldToBase_; };
 	void setWorldToBase(const Mat4f& newWTB) { worldToBase_ = newWTB; };
 
-	// for rendering
-	void renderSkeleton();
-	std::vector<Vertex> getMeshVertices();
+	// kinematics interface
+	FW::Vec3f			getTcpPosition();
+	std::vector<float>	inverseKinematics(FW::Vec3f tcp_pos);
 
 	// skeleton-ish functionality
 	FW::Vec3f				getJointRotation(unsigned index) const { return links_[index].rotation; };
@@ -94,27 +99,3 @@ private:
 	unsigned selected_joint_;
 };
 
-// box-shaped mesh representing a link between joints
-class LinkMesh {
-public:
-	LinkMesh(float thickness, float length) { thickness_ = thickness; length_ = length; };
-
-	std::vector<Vertex> getVertices();
-private:
-	float thickness_;
-	float length_;
-};
-
-
-// cylinder mesh representing a rotational joint
-class JointMesh {
-public:
-	JointMesh(float radius, float depth) { radius_ = radius; depth_ = depth; };
-
-	std::vector<Vertex> getVertices();
-private:
-	std::pair<std::vector<Vertex>, std::vector<Vertex>> makeFace(int numRingVerts, float z);
-
-	float radius_;
-	float depth_;
-};

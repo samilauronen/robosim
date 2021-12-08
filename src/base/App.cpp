@@ -4,7 +4,8 @@
 #include "base/Main.hpp"
 #include "gpu/GLContext.hpp"
 #include "gpu/Buffer.hpp"
-#include "utility.hpp"
+#include "Utility.hpp"
+#include "RobotGraphics.hpp"
 
 #include <array>
 #include <cassert>
@@ -270,6 +271,9 @@ void App::render() {
 	P.setCol(3, Vec4f(0, 0, -2*fFar*fNear/(fFar-fNear), 0));
 	Mat4f world_to_clip = P * C;
 
+	vector<Link> robot_links = rob_->getLinks();
+	int selected_joint = rob_->getSelectedJoint();
+
 	if (drawmode_ == MODE_SKELETON) {
 		// Draw the skeleton as a set of joint positions, connecting lines,
 		// and local coordinate systems at each joint.
@@ -284,7 +288,7 @@ void App::render() {
 		glLoadMatrixf(&P(0,0));
 		glMatrixMode(GL_MODELVIEW);
 		glLoadMatrixf(&C(0,0));
-		rob_->renderSkeleton();
+		RobotGraphics::renderSkeleton(robot_links, selected_joint);
 	}
 	else // mesh mode
 	{
@@ -292,7 +296,7 @@ void App::render() {
 			glPolygonMode(GL_FRONT, GL_LINE);
 			glPolygonMode(GL_BACK, GL_LINE);
 		}
-		std::vector<Vertex> vertices = rob_->getMeshVertices();
+		std::vector<Vertex> vertices = RobotGraphics::getMeshVertices(robot_links, selected_joint);
 
 		glBindBuffer(GL_ARRAY_BUFFER, gl_.simple_vertex_buffer);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
@@ -321,27 +325,19 @@ void App::render() {
 	}
 	
 	// Show status messages.
-	Link selected_link = rob_->getLinks()[rob_->getSelectedJoint()];
 	std::stringstream ss;
-	ss << "to_parent for joint " << rob_->getSelectedJoint() << "/" << rob_->getNumJoints() << endl;
+	Vec3f tcp = rob_->getTcpPosition();
+	ss << "TCP world position: ("  << tcp.x << ", " << tcp.y << ", " << tcp.z << ")" << endl;
 	ss << endl;
+
+
+	Link selected_link = rob_->getLinks()[rob_->getSelectedJoint()];
+	ss << endl << endl;
+	ss <<"to_parent for joint " << rob_->getSelectedJoint() + 1 << "/" << rob_->getNumJoints() << endl;
 	for (int i = 0; i < 4; i++)
 	{
 		for (int j = 0; j < 4; j++) {
 			float value1 = (F64)selected_link.link_matrix.get(i, j);
-			if (value1 < 0.001 && value1 > -0.001) value1 = 0;
-			ss << std::setw(3) << value1 << "  ";
-			
-		}
-		ss << endl;
-	}
-
-	ss << endl << endl;
-	ss <<"to_world for joint " << rob_->getSelectedJoint() << "/" << rob_->getNumJoints() << endl;
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++) {
-			float value1 = (F64)selected_link.to_world.get(i, j);
 			if (value1 < 0.001 && value1 > -0.001) value1 = 0;
 			ss << std::setw(3) << value1 << "  ";
 		}
