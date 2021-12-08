@@ -10,7 +10,10 @@
     <ClCompile Include="src\base\App.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\base\robot.cpp">
+    <ClCompile Include="src\base\Robot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\RobotGraphics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -18,10 +21,16 @@
     <ClInclude Include="src\base\App.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\base\utility.hpp">
+    <ClInclude Include="src\base\Utility.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\base\robot.hpp">
+    <ClInclude Include="src\base\Robot.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base\RobotGraphics.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base\InverseKinematics.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

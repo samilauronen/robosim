@@ -235,12 +235,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\base\App.cpp" />
-    <ClCompile Include="src\base\robot.cpp" />
+    <ClCompile Include="src\base\Robot.cpp" />
+    <ClCompile Include="src\base\RobotGraphics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\base\App.hpp" />
-    <ClInclude Include="src\base\robot.hpp" />
-    <ClInclude Include="src\base\utility.hpp" />
+    <ClInclude Include="src\base\InverseKinematics.hpp" />
+    <ClInclude Include="src\base\Robot.hpp" />
+    <ClInclude Include="src\base\RobotGraphics.hpp" />
+    <ClInclude Include="src\base\Utility.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
