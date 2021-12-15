@@ -4,10 +4,12 @@
 
 namespace RobotGraphics {
 
+const Vec3f JOINT_COLOR = Vec3f(0.2, 1, 0.8);
+const Vec3f JOINT_SELECTED_COLOR = Vec3f(0.8, 0.2, 0.1);
+const Vec3f LINK_COLOR = Vec3f(0.9, 0.5, 0);
+
 std::vector<Vertex> getMeshVertices(std::vector<Link> links, int selected_joint);
 void renderSkeleton(std::vector<Link> links, int selected_joint);
-
-
 
 // box-shaped mesh representing a link between joints
 class LinkMesh {

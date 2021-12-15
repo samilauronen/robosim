@@ -23,11 +23,8 @@ struct glGeneratedIndices
 	// Buffers
 	GLuint simple_vertex_buffer, ssd_vertex_buffer;
 
-	// simple_shader uniforms
-	GLint simple_world_to_clip_uniform, simple_shading_mix_uniform;
-
-	// ssd_shader uniforms
-	GLint ssd_world_to_clip_uniform, ssd_shading_mix_uniform, ssd_transforms_uniform;
+	// shader uniforms
+	GLint model, view, projection, lightPos, viewPos, lightColor, objectColor;
 };
 
 class App : public Window::Listener
@@ -68,6 +65,7 @@ private:
 	std::vector<float>  joint_angle_controls_;
 
 	uint64_t time_end_;
+	float temp = 0;
 
 	glGeneratedIndices	gl_;
 

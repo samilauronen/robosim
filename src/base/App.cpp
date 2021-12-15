@@ -180,36 +180,70 @@ void App::initRendering()
 		layout(location = 1) in vec3 aNormal;
 		layout(location = 2) in vec3 aColor;
 
-		out vec4 vColor;
+		out vec3 FragPos;
+		out vec3 Normal;
+		out vec3 vColor;
 
-		uniform mat4 uWorldToClip;
-		uniform float uShadingMix;
-
-		const vec3 directionToLight = normalize(vec3(0.5, 0.5, 0.6));
+		uniform mat4 model;
+		uniform mat4 view;
+		uniform mat4 projection;
 
 		void main()
 		{
-			float clampedCosine = clamp(dot(aNormal, directionToLight), 0.0, 1.0);
-			vec3 litColor = vec3(clampedCosine);
-			vColor = vec4(mix(aColor.xyz, litColor, uShadingMix), 1);
-			gl_Position = uWorldToClip * aPosition;
+			FragPos = vec3(model * aPosition);
+			Normal = mat3(transpose(inverse(model))) * aNormal;
+			vColor = aColor;
+
+			gl_Position = projection * view * vec4(FragPos, 1.0);
 		}
 		),
 		"#version 330\n"
 		FW_GL_SHADER_SOURCE(
-		in vec4 vColor;
-		out vec4 fColor;
+
+		out vec4 FragColor;
+
+		in vec3 Normal;
+		in vec3 FragPos;
+		in vec3 vColor;
+
+		uniform vec3 lightPos;
+		uniform vec3 viewPos;
+		uniform vec3 lightColor;
+
 		void main()
 		{
-			fColor = vColor;
+			// ambient
+			float ambientStrength = 0.2;
+			vec3 ambient = ambientStrength * lightColor;
+
+			// diffuse
+			vec3 norm = normalize(Normal);
+			vec3 lightDir = normalize(lightPos - FragPos);
+			float diff = max(dot(norm, lightDir), 0.0);
+			vec3 diffuse = diff * lightColor;
+
+			// specular
+			float specularStrength = 0.3;
+			vec3 viewDir = normalize(viewPos - FragPos);
+			vec3 reflectDir = reflect(-lightDir, norm);
+			float spec = pow(max(dot(viewDir, reflectDir), 0.0), 4);
+			vec3 specular = specularStrength * spec * lightColor;
+
+			vec3 result = (ambient + diffuse + specular) * vColor;
+			FragColor = vec4(result, 1.0);
 		}
 		));
 	ctx->setProgram("simple_shader", simple_prog);
 
 	// Get the IDs of the shader programs and their uniform input locations from OpenGL.
 	gl_.simple_shader = simple_prog->getHandle();
-	gl_.simple_world_to_clip_uniform = glGetUniformLocation(gl_.simple_shader, "uWorldToClip");
-	gl_.simple_shading_mix_uniform = glGetUniformLocation(gl_.simple_shader, "uShadingMix");
+	gl_.model = glGetUniformLocation(gl_.simple_shader, "model");
+	gl_.view  = glGetUniformLocation(gl_.simple_shader, "view");
+	gl_.projection = glGetUniformLocation(gl_.simple_shader, "projection");
+	gl_.lightPos = glGetUniformLocation(gl_.simple_shader, "lightPos");
+	gl_.viewPos = glGetUniformLocation(gl_.simple_shader, "viewPos");
+	gl_.lightColor = glGetUniformLocation(gl_.simple_shader, "lightColor");
+	gl_.objectColor = glGetUniformLocation(gl_.simple_shader, "objectColor");
 }
 
 void App::render() {
@@ -232,9 +266,9 @@ void App::render() {
 	Mat4f C = camera_ctrl_.getWorldToClip();
 
 	Mat4f P;
-	static const float fNear = 0.1f, fFar = 4.0f;
+	static const float fNear = 0.3f, fFar = 8.0f;
 	P.setCol(0, Vec4f(1, 0, 0, 0));
-	P.setCol(1, Vec4f(0, fAspect, 0, 0));
+	P.setCol(1, Vec4f(0, fAspect, 0, 0));  
 	P.setCol(2, Vec4f(0, 0, (fFar+fNear)/(fFar-fNear), 1));
 	P.setCol(3, Vec4f(0, 0, -2*fFar*fNear/(fFar-fNear), 0));
 	Mat4f world_to_clip = P * C;
@@ -264,14 +298,68 @@ void App::render() {
 			glPolygonMode(GL_FRONT, GL_LINE);
 			glPolygonMode(GL_BACK, GL_LINE);
 		}
+		glCullFace(GL_BACK);
 		std::vector<Vertex> vertices = RobotGraphics::getMeshVertices(robot_links, selected_joint);
+
+		float square_size = 0.2;
+		float grid_size = 50;
+
+		std::vector<Vertex> planeVerts;
+
+		for (int i = 0; i < grid_size; i++) {
+			for (int j = 0; j < grid_size; j++) {
+				Vec3f color = (i + j) % 2 == 0 ? Vec3f(0.8, 0.8, 0.8) : Vec3f(0.3, 0.3, 0.3);
+
+				// left triangle
+				Vertex p1, p2, p3;
+				p1.position = Vec3f(i * square_size, 0, j * square_size);
+				p2.position = Vec3f(i * square_size, 0, (j + 1) * square_size);
+				p3.position = Vec3f((i + 1) * square_size, 0, j * square_size);
+
+				p1.normal = p2.normal = p3.normal = Vec3f(0, 1, 0);
+				p1.color = p2.color = p3.color = color;
+				planeVerts.insert(planeVerts.end(), { p1,p2,p3 });
+
+				// right triangle
+				p1.position = Vec3f(i * square_size, 0, (j + 1) * square_size);
+				p2.position = Vec3f((i + 1) * square_size, 0, (j + 1) * square_size);
+				p3.position = Vec3f((i + 1) * square_size, 0, j * square_size);
+
+				p1.normal = p2.normal = p3.normal = Vec3f(0, 1, 0);
+				p1.color = p2.color = p3.color = color;
+				planeVerts.insert(planeVerts.end(), { p1,p2,p3 });
+			}
+		}
+		for (Vertex& v : planeVerts) {
+			v.position -= Vec3f(grid_size*square_size / 2, 0, grid_size*square_size / 2);
+		}
+		vertices.insert(vertices.end(), planeVerts.begin(), planeVerts.end());
 
 		glBindBuffer(GL_ARRAY_BUFFER, gl_.simple_vertex_buffer);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glUseProgram(gl_.simple_shader);
-		glUniformMatrix4fv(gl_.simple_world_to_clip_uniform, 1, GL_FALSE, world_to_clip.getPtr());
-		glUniform1f(gl_.simple_shading_mix_uniform, shading_toggle_ ? 1.0f : 0.0f);
+
+		gl_.model = glGetUniformLocation(gl_.simple_shader, "model");
+		gl_.view = glGetUniformLocation(gl_.simple_shader, "view");
+		gl_.projection = glGetUniformLocation(gl_.simple_shader, "projection");
+		gl_.lightPos = glGetUniformLocation(gl_.simple_shader, "lightPos");
+		gl_.viewPos = glGetUniformLocation(gl_.simple_shader, "viewPos");
+		gl_.lightColor = glGetUniformLocation(gl_.simple_shader, "lightColor");
+		gl_.objectColor = glGetUniformLocation(gl_.simple_shader, "objectColor");
+
+		Mat4f model;
+		Vec3f viewpos = camera_ctrl_.getPosition();
+		temp += 0.01;
+
+		glUniformMatrix4fv(gl_.model, 1, GL_FALSE, model.getPtr());
+		glUniformMatrix4fv(gl_.view, 1, GL_FALSE, world_to_clip.getPtr());
+		glUniformMatrix4fv(gl_.projection, 1, GL_FALSE, P.getPtr());
+
+		glUniform3f(gl_.lightPos, 10*sin(temp), 2, 10 * cos(temp));
+		glUniform3f(gl_.viewPos,  viewpos.x, viewpos.y, viewpos.z);
+		glUniform3f(gl_.lightColor, 1, 1, 1);
+
 		glBindVertexArray(gl_.simple_vao);
 		glDrawArrays(GL_TRIANGLES, 0, (int)vertices.size());
 

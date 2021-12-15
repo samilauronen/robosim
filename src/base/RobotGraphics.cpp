@@ -3,6 +3,8 @@
 
 using namespace std;
 
+
+
 void RobotGraphics::renderSkeleton(vector<Link> links, int selected_joint)
 {
 	glEnable(GL_POINT_SMOOTH);
@@ -165,7 +167,7 @@ vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links, int selected_j
 
 			for (auto& v : meshVertices) {
 				v.position = link_transform * v.position;
-				v.normal = link_transform * v.normal;
+				v.normal = link_transform.getXYZ() * v.normal;
 			}
 			allVertices.insert(allVertices.end(), meshVertices.begin(), meshVertices.end());
 		}
@@ -194,7 +196,7 @@ vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links, int selected_j
 
 			for (auto& v : meshVertices) {
 				v.position = link_transform * v.position;
-				v.normal = link_transform * v.normal;
+				v.normal = link_transform.getXYZ() * v.normal;
 			}
 			allVertices.insert(allVertices.end(), meshVertices.begin(), meshVertices.end());
 		}
@@ -213,7 +215,7 @@ vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links, int selected_j
 		// set joint mesh color different if it is selected
 		if (selected_joint == i) {
 			for (auto& v : meshVertices) {
-				v.color = Vec3f(1.0f, 0.2f, 0.2f);
+				v.color = JOINT_SELECTED_COLOR;
 			}
 		}
 
@@ -228,7 +230,7 @@ vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links, int selected_j
 		Mat4f transformation = combineToMat4f(orientation, translation);
 		for (auto& v : meshVertices) {
 			v.position = transformation * v.position;
-			v.normal = transformation * v.normal;
+			v.normal = transformation.getXYZ().inverted().transposed() * v.normal;
 		}
 		allVertices.insert(allVertices.end(), meshVertices.begin(), meshVertices.end());
 	}
@@ -251,13 +253,13 @@ std::vector<Vertex> RobotGraphics::LinkMesh::getVertices()
 	// first square face
 	Vertex v1, v2, v3, v4;
 	v1.position = Vec3f(-offset, offset, 0);
-	v1.normal = Vec3f(-1, 1, 0).normalized();
+	v1.normal = Vec3f(-1, 1, -1).normalized();
 	v2.position = Vec3f(offset, offset, 0);
-	v2.normal = Vec3f(1, 1, 0).normalized();
+	v2.normal = Vec3f(1, 1, -1).normalized();
 	v3.position = Vec3f(offset, -offset, 0);
-	v3.normal = Vec3f(1, -1, 0).normalized();
+	v3.normal = Vec3f(1, -1, -1).normalized();
 	v4.position = Vec3f(-offset, -offset, 0);
-	v4.normal = Vec3f(-1, -1, 0).normalized();
+	v4.normal = Vec3f(-1, -1, -1).normalized();
 
 	// triangles of the face: v1,v2,v3 and v3,v4,v1
 	vertices.insert(vertices.end(), { v1,v2,v3, v3,v4,v1 });
@@ -265,13 +267,13 @@ std::vector<Vertex> RobotGraphics::LinkMesh::getVertices()
 	// second square face
 	Vertex v5, v6, v7, v8;
 	v5.position = Vec3f(-offset, offset, length_);
-	v5.normal = Vec3f(-1, 1, 0).normalized();
+	v5.normal = Vec3f(-1, 1, 1).normalized();
 	v6.position = Vec3f(offset, offset, length_);
-	v6.normal = Vec3f(1, 1, 0).normalized();
+	v6.normal = Vec3f(1, 1, 1).normalized();
 	v7.position = Vec3f(offset, -offset, length_);
-	v7.normal = Vec3f(1, -1, 0).normalized();
+	v7.normal = Vec3f(1, -1, 1).normalized();
 	v8.position = Vec3f(-offset, -offset, length_);
-	v8.normal = Vec3f(-1, -1, 0).normalized();
+	v8.normal = Vec3f(-1, -1, 1).normalized();
 
 	// triangles of the face: v5,v6,v7 and v7,v8,v5
 	vertices.insert(vertices.end(), { v5,v6,v7, v7,v8,v5 });
@@ -285,8 +287,7 @@ std::vector<Vertex> RobotGraphics::LinkMesh::getVertices()
 	// set colors
 	int i = 0;
 	for (auto& v : vertices) {
-		Vec3f color = distinct_colors[i % 6];
-		v.color = color;
+		v.color = LINK_COLOR;
 		i++;
 	}
 
@@ -327,7 +328,7 @@ std::vector<Vertex> RobotGraphics::JointMesh::getVertices()
 
 	// same color for all
 	for (auto& v : allVertices) {
-		v.color = Vec3f(1, 1, 0);
+		v.color = JOINT_COLOR;
 	}
 
 	return allVertices;
