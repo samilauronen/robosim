@@ -266,7 +266,7 @@ void App::render() {
 	Mat4f C = camera_ctrl_.getWorldToClip();
 
 	Mat4f P;
-	static const float fNear = 0.3f, fFar = 8.0f;
+	static const float fNear = 0.3f, fFar = 4.0f;
 	P.setCol(0, Vec4f(1, 0, 0, 0));
 	P.setCol(1, Vec4f(0, fAspect, 0, 0));  
 	P.setCol(2, Vec4f(0, 0, (fFar+fNear)/(fFar-fNear), 1));
@@ -298,7 +298,6 @@ void App::render() {
 			glPolygonMode(GL_FRONT, GL_LINE);
 			glPolygonMode(GL_BACK, GL_LINE);
 		}
-		glCullFace(GL_BACK);
 		std::vector<Vertex> vertices = RobotGraphics::getMeshVertices(robot_links, selected_joint);
 
 		float square_size = 0.2;
@@ -353,7 +352,7 @@ void App::render() {
 		temp += 0.01;
 
 		glUniformMatrix4fv(gl_.model, 1, GL_FALSE, model.getPtr());
-		glUniformMatrix4fv(gl_.view, 1, GL_FALSE, world_to_clip.getPtr());
+		glUniformMatrix4fv(gl_.view, 1, GL_FALSE, C.getPtr());
 		glUniformMatrix4fv(gl_.projection, 1, GL_FALSE, P.getPtr());
 
 		glUniform3f(gl_.lightPos, 10*sin(temp), 2, 10 * cos(temp));

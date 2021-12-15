@@ -4,7 +4,7 @@
 
 namespace RobotGraphics {
 
-const Vec3f JOINT_COLOR = Vec3f(0.2, 1, 0.8);
+const Vec3f JOINT_COLOR = Vec3f(0.05, 0.6, 0.4);
 const Vec3f JOINT_SELECTED_COLOR = Vec3f(0.8, 0.2, 0.1);
 const Vec3f LINK_COLOR = Vec3f(0.9, 0.5, 0);
 
