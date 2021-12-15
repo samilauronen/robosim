@@ -9,10 +9,8 @@
 #include <vector>
 #include <memory>
 
+
 namespace FW {
-
-
-
 
 struct glGeneratedIndices
 {
@@ -68,6 +66,8 @@ private:
 	bool				shading_mode_changed_;
 	std::vector<Vec3f>	joint_colors_;
 	std::vector<float>  joint_angle_controls_;
+
+	uint64_t time_end_;
 
 	glGeneratedIndices	gl_;
 

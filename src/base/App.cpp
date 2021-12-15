@@ -81,9 +81,18 @@ App::App(void)
 	camera_ctrl_.setSpeed(1.75f);
 
 	window_.setSize( Vec2i(800, 800) );
+
+	time_end_ = currentTimeMicros();
 }
 
 bool App::handleEvent(const Window::Event& ev) {	
+
+	uint64_t time_start = currentTimeMicros();
+
+	uint64_t dt_micros = time_start - time_end_;
+	float dt_millis = (float)dt_micros / 1000;
+
+	rob_->update(dt_millis);
 
 	if (shading_mode_changed_) {
 		common_ctrl_.message(shading_toggle_ ?
@@ -95,11 +104,14 @@ bool App::handleEvent(const Window::Event& ev) {
 	if (ev.type == Window::EventType_KeyDown) {
 		static const float rot_incr = 0.05;
 		if (ev.key == FW_KEY_J)
-			rob_->incrJointRotation(rot_incr);
+			//rob_->incrJointRotation(rot_incr);
+			(void)rot_incr;
 		else if (ev.key == FW_KEY_K)
-			rob_->incrJointRotation(-rot_incr);
+			//rob_->incrJointRotation(-rot_incr);
+			(void)rot_incr;
 		else if (ev.key == FW_KEY_R)
-			rob_->setJointRotation(0.0f);
+			//rob_->setJointRotation(0.0f);
+			(void)rot_incr;
 		else if (ev.key == FW_KEY_N)
 			rob_->setSelectedJoint(rob_->getSelectedJoint() == 0 ? 0 : rob_->getSelectedJoint() - 1);
 		else if (ev.key == FW_KEY_M)
@@ -114,7 +126,7 @@ bool App::handleEvent(const Window::Event& ev) {
 
 	// set robot joint rotations to slider values
 	for (int i = 0; i < joint_angle_controls_.size(); i++) {
-		rob_->setJointRotation(i + 1, joint_angle_controls_[i]);
+		rob_->setJointTargetAngle(i + 1, joint_angle_controls_[i]);
 	}
 
 	camera_ctrl_.handleEvent(ev);
@@ -123,6 +135,8 @@ bool App::handleEvent(const Window::Event& ev) {
 	if (ev.type == Window::EventType_Paint)
 		render();
 	window_.repaint();
+
+	time_end_ = currentTimeMicros();
 	return false;
 }
 
@@ -191,54 +205,8 @@ void App::initRendering()
 		}
 		));
 	ctx->setProgram("simple_shader", simple_prog);
-	// YOUR CODE HERE (EXTRA):
-	// Perform the skinning math in the vertex shader, like the example binary
-	// does. This is the exact same thing you already did in R4 & R5, only
-	// translated from C++ to GLSL. Remember to handle normals as well.
-	auto ssd_prog = new GLContext::Program(
-		"#version 330\n"
-		FW_GL_SHADER_SOURCE(
-		layout(location = 0) in vec4 aPosition;
-		layout(location = 1) in vec3 aNormal;
-		layout(location = 2) in vec4 aColor;
-		layout(location = 3) in ivec4 aJoints1;
-		layout(location = 4) in ivec4 aJoints2;
-		layout(location = 5) in vec4 aWeights1;
-		layout(location = 6) in vec4 aWeights2;
-
-		const vec3 directionToLight = normalize(vec3(0.5, 0.5, 0.6));
-		uniform mat4 uWorldToClip;
-		uniform float uShadingMix;
-
-		out vec4 vColor;		
-
-		const int numJoints = 100;
-		uniform mat4 uJoints[numJoints];
-	
-		void main()
-		{
-			float clampedCosine = clamp(dot(aNormal, directionToLight), 0.0, 1.0);
-			vec3 litColor = vec3(clampedCosine);
-			vColor = vec4(mix(aColor.xyz, litColor, uShadingMix), 1);
-			gl_Position = uWorldToClip * aPosition;
-		}
-		),
-		"#version 330\n"
-		FW_GL_SHADER_SOURCE(
-		in vec4 vColor;
-		out vec4 fColor;
-		void main()
-		{
-			fColor = vColor;
-		}
-		));
-	ctx->setProgram("ssd_shader", ssd_prog);
 
 	// Get the IDs of the shader programs and their uniform input locations from OpenGL.
-	gl_.ssd_shader = ssd_prog->getHandle();
-	gl_.ssd_transforms_uniform = glGetUniformLocation(gl_.ssd_shader, "uJoints");
-	gl_.ssd_world_to_clip_uniform = glGetUniformLocation(gl_.ssd_shader, "uWorldToClip");
-	gl_.ssd_shading_mix_uniform = glGetUniformLocation(gl_.ssd_shader, "uShadingMix");
 	gl_.simple_shader = simple_prog->getHandle();
 	gl_.simple_world_to_clip_uniform = glGetUniformLocation(gl_.simple_shader, "uWorldToClip");
 	gl_.simple_shading_mix_uniform = glGetUniformLocation(gl_.simple_shader, "uShadingMix");
@@ -327,7 +295,11 @@ void App::render() {
 	// Show status messages.
 	std::stringstream ss;
 	Vec3f tcp = rob_->getTcpPosition();
+	Eigen::VectorXf speeds = rob_->getJointSpeeds();
+	Eigen::VectorXf tcpSpeed = rob_->getTcpSpeed();
 	ss << "TCP world position: ("  << tcp.x << ", " << tcp.y << ", " << tcp.z << ")" << endl;
+	ss << "Joint speeds: " << speeds(0)  << ", " << speeds(1) << endl;
+	ss << "TCP speed: " << tcpSpeed(0) << ", " << tcpSpeed(1) << ", " << tcpSpeed(2) << " Angular: " << tcpSpeed(3) << ", " << tcpSpeed(4) << ", " << tcpSpeed(5) << endl;
 	ss << endl;
 
 

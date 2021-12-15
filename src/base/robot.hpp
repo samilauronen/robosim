@@ -4,9 +4,9 @@
 #include <string>
 #include <iostream>
 
+#include "Eigen/Dense"
+
 using namespace FW;
-
-
 
 struct Vertex
 {
@@ -31,10 +31,16 @@ struct Link {
 	// rotation angle of this link (or the rotation of the joint that moves this link)
 	float rotation;
 
+	// target rotation for this link, current rotation will move towards this when update() is called
+	float target_rotation;
+
 	// when true, the rotation cannot be changed
 	bool is_locked;
 
-	// dh parameters of this link
+	float joint_speed;
+	bool is_moving;
+
+	// DH parameters of this link
 	DhParam p;
 
 	// components of the link transformation matrix
@@ -56,46 +62,48 @@ class Robot {
 public:
 	Robot(std::string dh_param_filename, Vec3f location);
 
-	// get or set base location and orientation in the world
-	const Mat4f& getWorldToBase() const { return worldToBase_; };
-	void setWorldToBase(const Mat4f& newWTB) { worldToBase_ = newWTB; };
+	// used to update robot angles over some time difference dt
+	void					update(float dt);
 
-	// kinematics interface
-	FW::Vec3f			getTcpPosition();
-	std::vector<float>	inverseKinematics(FW::Vec3f tcp_pos);
+	// kinematics stuff
+	FW::Vec3f				getTcpPosition() const;
+	Eigen::VectorXf			getTcpSpeed() const;
+	std::vector<float>		inverseKinematics(FW::Vec3f tcp_pos) const;
+	const Eigen::MatrixXf	getJacobian() const;
+	Eigen::VectorXf			getJointSpeeds() const;
 
-	// skeleton-ish functionality
-	FW::Vec3f				getJointRotation(unsigned index) const { return links_[index].rotation; };
-	void					setJointRotation(unsigned index, float angle) { links_[index].rotation = angle; };
-	void					incrJointRotation(unsigned index, float angle) { links_[index].rotation += angle; };
+	// joint angle getters
+	Eigen::VectorXf			getJointAngles() const;
+	float					getJointAngle(unsigned index) const { return links_[index].rotation; };
+	float					getSelectedJointAngle() const { return links_[selected_joint_].rotation; };
+	Eigen::VectorXf			getTargetJointAngles() const;
+	float					getTargetJointAngle(unsigned index) const { return links_[index].target_rotation; };
+	float					getSelectedJointTargetAngle() const { return links_[selected_joint_].target_rotation; };
+	unsigned				getSelectedJoint() const { return selected_joint_; };
 
-	FW::Vec3f				getJointRotation() const { return links_[selected_joint_].rotation; };
-	void					setJointRotation(float angle) { links_[selected_joint_].rotation = angle; };
-	void					incrJointRotation(float angle) { links_[selected_joint_].rotation += angle; };
-
+	// joint angle setters
+	void					setJointTargetAngle(unsigned index, float angle);
 	void					setSelectedJoint(unsigned index) { selected_joint_ = index; };
-	unsigned				getSelectedJoint() { return selected_joint_; };
-	
-	void							updateToWorldTransforms();
-	std::vector<FW::Mat4f>			getToWorldTransforms();
-	const std::vector<Link>&		getLinks();
 
-	size_t					getNumJoints() { return links_.size() - 1;  /* zeroth link is not counted */ };
+	// getters used by graphics interface
+	std::vector<FW::Mat4f>		getToWorldTransforms() const;
+	const std::vector<Link>&	getLinks() const;
 
+	size_t					getNumJoints() const { return links_.size() - 1;  /* zeroth link is not counted */ };
 
 private:
-	Mat4f tool;
 	Mat4f worldToBase_;
 	Mat4f baseToZero_;
 
-	void loadDhParams();
-	void buildModel();
+	void					updateToWorldTransforms();
+	std::vector<DhParam>	loadDhParams(const std::string filename);
+	void					buildKinematicModel(const std::vector<DhParam>& params);
+
+	// private setters for changing joint rotations directly (must call updateToWorldTransforms)
+	void					setJointAngle(unsigned index, float angle);
+	void					incrJointAngle(unsigned index, float angle);
 
 	std::vector<Link> links_;
-	std::vector<DhParam> params_;
-	std::string filename_;
-
-	// for drawing and control
 	unsigned selected_joint_;
 };
 

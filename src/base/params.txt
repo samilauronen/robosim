@@ -1,8 +1,4 @@
-# s,  a,      d,   alpha, theta
-  R   0	     0.16   1.57    x
-  R -0.425    0      0      x
-  R -0.39     0      0      x
-  R   0      0.133     1.57 x
-  R   0      0.099    -1.57 x
-  R   0      0.099      0   x
+# s,   a,    d,  alpha,  theta
+  R	   0	 1	   pi/2    x
+  R    2     0      0      x
   

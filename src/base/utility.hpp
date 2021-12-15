@@ -3,6 +3,7 @@
 #include "../framework/base/Math.hpp"
 
 #include <iostream>
+#include <chrono>
 
 template <typename T>
 void printVec3(const T& t) {
@@ -26,6 +27,17 @@ inline FW::Mat4f combineToMat4f(const FW::Mat3f& rotation, const FW::Vec3f& tran
 	result.setCol(2, FW::Vec4f(rotation.getCol(2), 0));
 	result.setCol(3, FW::Vec4f(translation, 1));
 	return result;
+}
+
+
+inline uint64_t currentTimeMillis() {
+	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::
+		now().time_since_epoch()).count();
+}
+
+inline uint64_t currentTimeMicros() {
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::
+		now().time_since_epoch()).count();
 }
 
 // http://stackoverflow.com/questions/2270726/how-to-determine-the-size-of-an-array-of-strings-in-c

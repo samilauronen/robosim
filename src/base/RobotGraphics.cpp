@@ -59,7 +59,7 @@ void RobotGraphics::renderSkeleton(vector<Link> links, int selected_joint)
 		if (is_tcp_frame) {
 			glLineWidth(2);
 			scale = 0.1;
-			(current_trans * Vec3f(0, 0, 0)).print(); cerr << endl;
+			// (current_trans * Vec3f(0, 0, 0)).print(); cerr << endl;
 		}
 		else {
 			glLineWidth(1);
@@ -178,7 +178,6 @@ vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links, int selected_j
 			vector<Vertex> meshVertices = x_link.getVertices();
 
 			Mat3f basisVecs = links[i].to_world.getXYZ();
-
 			Vec3f i, j, k;
 			k = (after_z_screw - current_world_pos).normalized();
 			j = basisVecs.getCol(1).normalized();
