@@ -28,7 +28,7 @@
 #include "base/Thread.hpp"
 
 using namespace FW;
-
+bool isAvailable_InitializeConditionVariable() { return true; }
 //------------------------------------------------------------------------
 
 Spinlock            Thread::s_lock;
