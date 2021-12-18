@@ -42,7 +42,7 @@ Robot::Robot(std::string dh_param_filename, FW::Vec3f location)
 void Robot::update(float dt_millis)
 {
 	// in rad/s
-	const float JOINT_SPEED = FW_PI / 10;
+	const float JOINT_SPEED = FW_PI / 3;
 
 	for (int i = 1; i < links_.size(); i++) {
 		float target = getTargetJointAngle(i);
@@ -146,7 +146,6 @@ const Eigen::MatrixXf Robot::getJacobian() const
 
 Eigen::VectorXf Robot::getJointSpeeds() const
 {
-	const float JOINT_SPEED = FW_PI / 10;
 	Eigen::VectorXf speeds(getNumJoints());
 
 	for (int i = 1; i < links_.size(); i++) {

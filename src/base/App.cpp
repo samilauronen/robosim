@@ -268,7 +268,7 @@ void App::render() {
 	Mat4f P;
 	static const float fNear = 0.3f, fFar = 4.0f;
 	P.setCol(0, Vec4f(1, 0, 0, 0));
-	P.setCol(1, Vec4f(0, fAspect, 0, 0));  
+	P.setCol(1, Vec4f(0, fAspect, 0, 0));
 	P.setCol(2, Vec4f(0, 0, (fFar+fNear)/(fFar-fNear), 1));
 	P.setCol(3, Vec4f(0, 0, -2*fFar*fNear/(fFar-fNear), 0));
 	Mat4f world_to_clip = P * C;
@@ -355,7 +355,7 @@ void App::render() {
 		glUniformMatrix4fv(gl_.view, 1, GL_FALSE, C.getPtr());
 		glUniformMatrix4fv(gl_.projection, 1, GL_FALSE, P.getPtr());
 
-		glUniform3f(gl_.lightPos, 10*sin(temp), 2, 10 * cos(temp));
+		glUniform3f(gl_.lightPos, 5*sin(temp), 2, 5 * cos(temp));
 		glUniform3f(gl_.viewPos,  viewpos.x, viewpos.y, viewpos.z);
 		glUniform3f(gl_.lightColor, 1, 1, 1);
 
