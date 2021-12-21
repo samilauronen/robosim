@@ -94,6 +94,8 @@ bool App::handleEvent(const Window::Event& ev) {
 
 	rob_->update(dt_millis);
 
+	time_end_ = currentTimeMicros();
+
 	if (shading_mode_changed_) {
 		common_ctrl_.message(shading_toggle_ ?
 			"Directional light shading using normals; direction to light (0.5, 0.5, -0.6)" :
@@ -112,10 +114,23 @@ bool App::handleEvent(const Window::Event& ev) {
 		else if (ev.key == FW_KEY_R)
 			//rob_->setJointRotation(0.0f);
 			(void)rot_incr;
+		else if (ev.key == FW_KEY_ENTER && ik_) {
+			ik_ = false;
+			Eigen::VectorXf targetAngles = rob_->inverseKinematics(Vec3f(2, 1, 0.75));
+			for (int i = 0; i < targetAngles.rows(); i++) {
+				rob_->setJointTargetAngle(i + 1, targetAngles(i));
+			}
+		}
 		else if (ev.key == FW_KEY_N)
 			rob_->setSelectedJoint(rob_->getSelectedJoint() == 0 ? 0 : rob_->getSelectedJoint() - 1);
 		else if (ev.key == FW_KEY_M)
 			rob_->setSelectedJoint(clamp(rob_->getSelectedJoint()+1, 0u, (unsigned)rob_->getNumJoints()-1u));
+	}
+
+	if (ev.type == Window::EventType_KeyDown) {
+		if (ev.key == FW_KEY_ENTER) {
+			ik_ = true;
+		}
 	}
 
 	if (ev.type == Window::EventType_Close)	{
@@ -126,7 +141,7 @@ bool App::handleEvent(const Window::Event& ev) {
 
 	// set robot joint rotations to slider values
 	for (int i = 0; i < joint_angle_controls_.size(); i++) {
-		rob_->setJointTargetAngle(i + 1, joint_angle_controls_[i]);
+		//rob_->setJointTargetAngle(i + 1, joint_angle_controls_[i]);
 	}
 
 	camera_ctrl_.handleEvent(ev);
@@ -135,8 +150,6 @@ bool App::handleEvent(const Window::Event& ev) {
 	if (ev.type == Window::EventType_Paint)
 		render();
 	window_.repaint();
-
-	time_end_ = currentTimeMicros();
 	return false;
 }
 
@@ -381,7 +394,7 @@ void App::render() {
 	
 	// Show status messages.
 	std::stringstream ss;
-	Vec3f tcp = rob_->getTcpPosition();
+	Vec3f tcp = rob_->getTcpWorldPosition();
 	Eigen::VectorXf speeds = rob_->getJointSpeeds();
 	Eigen::VectorXf tcpSpeed = rob_->getTcpSpeed();
 	ss << "TCP world position: ("  << tcp.x << ", " << tcp.y << ", " << tcp.z << ")" << endl;

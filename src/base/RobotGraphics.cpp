@@ -32,6 +32,12 @@ void RobotGraphics::renderSkeleton(vector<Link> links, int selected_joint)
 
 		bool is_tcp_frame = i + 1 == links.size();
 
+		// draw target for IK
+		Vec3f ikTarget = Vec3f(2, 1, 0.75);
+		glBegin(GL_POINTS);
+		glVertex3f(ikTarget.x, ikTarget.y, ikTarget.z);
+		glEnd();
+
 		// world-position of the current frame origin
 		Vec3f pos = current_trans * Vec3f(0, 0, 0);
 

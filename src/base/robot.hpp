@@ -52,6 +52,11 @@ struct Link {
 	// relates this link's frame to the frame of the previous link
 	FW::Mat4f link_matrix;
 
+	// used to evaluate the link matrix for any joint angle state
+	// does not modify current state of the struct
+	// used by iterative inverse kinematics solvers
+	FW::Mat4f eval_link_matrix(float rotationAngle) const;
+
 	// transforms the coordinates of this link frame to world frame
 	// created by multiplying together all link matrices of the previous links and the current link
 	FW::Mat4f to_world;
@@ -66,10 +71,12 @@ public:
 	void					update(float dt);
 
 	// kinematics stuff
-	FW::Vec3f				getTcpPosition() const;
+	FW::Vec3f				getTcpWorldPosition() const;
+	FW::Vec3f				getTcpWorldPosition(Eigen::VectorXf jointAngles) const; // overload used by iterative inverse kinematics solutions
 	Eigen::VectorXf			getTcpSpeed() const;
-	std::vector<float>		inverseKinematics(FW::Vec3f tcp_pos) const;
-	const Eigen::MatrixXf	getJacobian() const;
+	Eigen::VectorXf			inverseKinematics(FW::Vec3f tcp_pos) const;
+	Eigen::MatrixXf			getJacobian() const;
+	Eigen::MatrixXf			getJacobian(Eigen::VectorXf jointAngles) const;	// overload used by iterative inverse kinematics solutions
 	Eigen::VectorXf			getJointSpeeds() const;
 
 	// joint angle getters
@@ -102,6 +109,9 @@ private:
 	// private setters for changing joint rotations directly (must call updateToWorldTransforms)
 	void					setJointAngle(unsigned index, float angle);
 	void					incrJointAngle(unsigned index, float angle);
+
+	const float JOINT_POSITIONAL_ACCURACY = 0.001f;
+	const float IK_POS_THRESHOLD = 0.0001f;
 
 	std::vector<Link> links_;
 	unsigned selected_joint_;

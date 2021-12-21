@@ -20,6 +20,9 @@ using namespace std;
 * Inverse kinematics, given a point (first programmatically, later by mouse click in the world)
 * Maybe have a toggle for drawing a wireframe-ball around the robot, visualizing it's range
 * inverse jacobians!, for trajectories!
+* Switch to quternions for trajectories to really work (interpolating orientation)
+* Make joints have an acceleration profile like in the lecture slides
+* Make joint speeds time-independent (now depends on framerate)
 * Dynamics???
 * ImGui for more awesome ui?
 */
@@ -50,7 +53,7 @@ void Robot::update(float dt_millis)
 
 		float diff = current - target;
 
-		if (FW::abs(diff) > 0.01) {
+		if (FW::abs(diff) > JOINT_POSITIONAL_ACCURACY) {
 			links_[i].is_moving = true;
 			if (current < target) {
 				links_[i].joint_speed = JOINT_SPEED;
@@ -70,9 +73,22 @@ void Robot::update(float dt_millis)
 	updateToWorldTransforms();
 }
 
-FW::Vec3f Robot::getTcpPosition() const
+FW::Vec3f Robot::getTcpWorldPosition() const
 {
 	return links_[links_.size() - 1].to_world * Vec3f(0, 0, 0);
+}
+
+FW::Vec3f Robot::getTcpWorldPosition(Eigen::VectorXf jointAngles) const
+{
+	// TODO: seriously gotta do something about this
+	Eigen::VectorXf jointAnglesTemp(jointAngles.rows() + 1);
+	jointAnglesTemp << 0.0f, jointAngles;
+
+	Mat4f to_world = worldToBase_ * baseToZero_;
+	for (int i = 0; i < links_.size(); i++) {
+		to_world *= links_[i].eval_link_matrix(jointAnglesTemp(i));
+	}
+	return to_world * Vec3f(0, 0, 0);
 }
 
 Eigen::VectorXf Robot::getTcpSpeed() const
@@ -84,23 +100,69 @@ Eigen::VectorXf Robot::getTcpSpeed() const
 	return jacobian * joint_speeds;
 }
 
-std::vector<float> Robot::inverseKinematics(FW::Vec3f tcp_pos) const
+Eigen::VectorXf Robot::inverseKinematics(Vec3f target_tcp_world_pos) const
 {
-	return std::vector<float>();
+	Mat4f zero_to_world = (worldToBase_ * baseToZero_).inverted();
+	Vec3f target_wrt_0 = zero_to_world * target_tcp_world_pos;
+
+	// updated every iteration
+	Eigen::VectorXf solutionJointAngles = getJointAngles();
+
+	// current position and it's difference from target
+	Vec3f current_wrt_0 = zero_to_world * getTcpWorldPosition();
+	Vec3f delta_p = target_wrt_0 - current_wrt_0;
+
+	uint64_t start_time = currentTimeMicros();
+
+	// still too far away?
+	while (delta_p.length() > IK_POS_THRESHOLD) {
+		// difference vec from target position
+		Eigen::Vector<float, 6> dp;
+		dp << delta_p.x, delta_p.y, delta_p.z, 0, 0, 0;
+
+		Eigen::MatrixXf jacobian = getJacobian(solutionJointAngles);
+
+		// equation of form J * d_theta = dp
+		// where J is jacobian, d_theta is difference in joint angles, dp is difference in TCP position
+		// solve for d_theta
+		Eigen::VectorXf delta_theta = jacobian.colPivHouseholderQr().solve(dp);
+
+		// clamp results, no crazy joint angles
+		for (int i = 0; i < delta_theta.rows(); i++) {
+			if (delta_theta(i) > FW_PI/8) delta_theta(i) = FW_PI/8;
+			if (delta_theta(i) < -FW_PI/8) delta_theta(i) = -FW_PI/8;
+		}
+
+		// update solution
+		solutionJointAngles += delta_theta;
+
+		// where are we at with the current solution?
+		current_wrt_0 = zero_to_world * getTcpWorldPosition(solutionJointAngles);
+		delta_p = target_wrt_0 - current_wrt_0;
+	}
+	int time_taken = currentTimeMicros() - start_time;
+	cout << "IK solution converged in " << time_taken << " microseconds" << endl;
+	cout << solutionJointAngles << endl;
+	cout << "==============" << endl;
+
+	return solutionJointAngles;
 }
 
-const Eigen::MatrixXf Robot::getJacobian() const
-{
+Eigen::MatrixXf Robot::getJacobian(Eigen::VectorXf jointAngles) const {
 	int n_rows = 6;					// jacobian will always have 6 rows, since 3D space has 6 degrees of freedom
 	int n_cols = getNumJoints();	// number of columns is the number of joint angles that can be controlled
 
 	Eigen::MatrixXf jacobian(n_rows, n_cols);
 
+	// TODO: also has angle for zeroth link, do something about this shit!
+	Eigen::VectorXf jointAnglesTemp(jointAngles.rows() + 1);
+	jointAnglesTemp << 0.0f, jointAngles;
+
 	// returns the transform 0_T_i as Eigen::Matrix4f
 	auto get_zero_to_i = [&](int i) {
 		Mat4f fwres;
 		for (int j = 0; j <= i; j++) {
-			fwres *= links_[j].link_matrix;
+			fwres *= links_[j].eval_link_matrix(jointAnglesTemp(j));
 		}
 
 		Eigen::Matrix4f res;
@@ -109,10 +171,10 @@ const Eigen::MatrixXf Robot::getJacobian() const
 		Vec4f row2 = fwres.getRow(2);
 		Vec4f row3 = fwres.getRow(3);
 
-		res <<  row0.x, row0.y, row0.z, row0.w,
-				row1.x, row1.y, row1.z, row1.w,
-				row2.x, row2.y, row2.z, row2.w,
-				row3.x, row3.y, row3.z, row3.w;
+		res << row0.x, row0.y, row0.z, row0.w,
+			row1.x, row1.y, row1.z, row1.w,
+			row2.x, row2.y, row2.z, row2.w,
+			row3.x, row3.y, row3.z, row3.w;
 		return res;
 	};
 
@@ -136,12 +198,18 @@ const Eigen::MatrixXf Robot::getJacobian() const
 		Eigen::Vector3f upper_part = (rot_0_to_i * z_vec).cross(transl_0_to_n - transl_0_to_i);
 		Eigen::Vector3f lower_part = rot_0_to_i * z_vec;
 
-		Eigen::Matrix<float, 6, 1> col;
+		Eigen::Vector<float, 6> col;
 		col << upper_part, lower_part;
 		jacobian.col(i) = col;
 	}
 
 	return jacobian;
+}
+
+Eigen::MatrixXf Robot::getJacobian() const
+{
+	// jacobian for current joint angles
+	return getJacobian(getJointAngles());
 }
 
 Eigen::VectorXf Robot::getJointSpeeds() const
@@ -159,16 +227,16 @@ Eigen::VectorXf Robot::getJointAngles() const
 {
 	Eigen::VectorXf angles(getNumJoints());
 	for (int i = 1; i < links_.size(); i++) {
-		angles(i) = links_[i].rotation;
+		angles(i - 1) = links_[i].rotation;
 	}
 	return angles;
 }
 
 Eigen::VectorXf Robot::getTargetJointAngles() const
 {
-	Eigen::VectorXf angles(links_.size());
+	Eigen::VectorXf angles(getNumJoints());
 	for (int i = 0; i < links_.size(); i++) {
-		angles(i) = links_[i].target_rotation;
+		angles(i - 1) = links_[i].target_rotation;
 	}
 	return angles;
 }
@@ -350,4 +418,22 @@ void Robot::buildKinematicModel(const std::vector<DhParam>& params)
 
 	cout << endl << "Manipulator Jacobian when joint angles are zero: " << endl;
 	cout << getJacobian() << endl;
+}
+
+FW::Mat4f Link::eval_link_matrix(float rotationAngle) const
+{
+	// https://www.youtube.com/watch?v=nuB_7BkYNMk
+	Vec3f transl = Vec3f(0, 0, p.d);						// first move up so that we are at the level of the common normal
+	Mat3f rot = Mat3f::rotation(Vec3f(0, 0, 1), rotationAngle);	// then rotate around z to align x with next x
+
+	Mat4f z_screw = combineToMat4f(rot, transl);  // translation and rotation with respect to z
+
+	// after applying the z-screw, we are at the correct level and our x-axis points in the correct direction
+	// now move towards our new x by link length
+	transl = Vec3f(p.a, 0, 0);
+	rot = Mat3f::rotation(Vec3f(1, 0, 0), p.alpha);	// apply link twist (rotate around x-axis)
+
+	Mat4f x_screw = combineToMat4f(rot, transl);	// translation and rotation with respect to x
+
+	return z_screw * x_screw;
 }

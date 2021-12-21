@@ -66,6 +66,7 @@ private:
 
 	uint64_t time_end_;
 	float temp = 0;
+	bool ik_ = true;
 
 	glGeneratedIndices	gl_;
 

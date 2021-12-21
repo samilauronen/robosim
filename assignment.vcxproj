@@ -162,7 +162,7 @@
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>src\framework;$(CUDA_INC_PATH);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src\eigen-lib;src\framework;$(CUDA_INC_PATH);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;FW_DO_NOT_OVERRIDE_NEW_DELETE;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);SOLUTION</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
