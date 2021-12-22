@@ -1,5 +1,6 @@
 #include "Robot.hpp"
 #include "Utility.hpp"
+#include "InverseKinematics.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -17,18 +18,15 @@ using namespace std;
 * Use ImGui for UI
 * Make your own camera class, or use an existing one (from GLFW?)
 * Make prismatic joints possible?
-* Inverse kinematics, given a point (first programmatically, later by mouse click in the world)
 * Maybe have a toggle for drawing a wireframe-ball around the robot, visualizing it's range
 * inverse jacobians!, for trajectories!
 * Switch to quternions for trajectories to really work (interpolating orientation)
 * Make joints have an acceleration profile like in the lecture slides
-* Make joint speeds time-independent (now depends on framerate)
 * Dynamics???
 * ImGui for more awesome ui?
 */
 
 Robot::Robot(std::string dh_param_filename, FW::Vec3f location)
-	: selected_joint_(0)
 {
 	// base to 0 frame
 	Mat3f rotation = Mat3f::rotation(Vec3f(1, 0, 0), -FW_PI / 2);
@@ -95,57 +93,33 @@ Eigen::VectorXf Robot::getTcpSpeed() const
 {
 	Eigen::MatrixXf jacobian = getJacobian();
 	Eigen::VectorXf joint_speeds = getJointSpeeds();
-	assert(jacobian.cols() == joint_speeds.rows());  // required for multiplication
-
 	return jacobian * joint_speeds;
 }
 
-Eigen::VectorXf Robot::inverseKinematics(Vec3f target_tcp_world_pos) const
+void Robot::setTargetTcpPosition(FW::Vec3f new_target_wrt_world)
 {
-	Mat4f zero_to_world = (worldToBase_ * baseToZero_).inverted();
-	Vec3f target_wrt_0 = zero_to_world * target_tcp_world_pos;
+	ik_target_ = new_target_wrt_world;
+	Eigen::VectorXf targetAngles = solveInverseKinematics(ik_target_);
+	setJointTargetAngles(targetAngles);
+}
 
-	// updated every iteration
-	Eigen::VectorXf solutionJointAngles = getJointAngles();
+Eigen::VectorXf Robot::solveInverseKinematics(Vec3f target_tcp_world_pos) const
+{
+	// solver can be switched quickly
+	IK::IKSolution solution = IK::SimpleIKSolver::solve(*this, target_tcp_world_pos);
 
-	// current position and it's difference from target
-	Vec3f current_wrt_0 = zero_to_world * getTcpWorldPosition();
-	Vec3f delta_p = target_wrt_0 - current_wrt_0;
-
-	uint64_t start_time = currentTimeMicros();
-
-	// still too far away?
-	while (delta_p.length() > IK_POS_THRESHOLD) {
-		// difference vec from target position
-		Eigen::Vector<float, 6> dp;
-		dp << delta_p.x, delta_p.y, delta_p.z, 0, 0, 0;
-
-		Eigen::MatrixXf jacobian = getJacobian(solutionJointAngles);
-
-		// equation of form J * d_theta = dp
-		// where J is jacobian, d_theta is difference in joint angles, dp is difference in TCP position
-		// solve for d_theta
-		Eigen::VectorXf delta_theta = jacobian.colPivHouseholderQr().solve(dp);
-
-		// clamp results, no crazy joint angles
-		for (int i = 0; i < delta_theta.rows(); i++) {
-			if (delta_theta(i) > FW_PI/8) delta_theta(i) = FW_PI/8;
-			if (delta_theta(i) < -FW_PI/8) delta_theta(i) = -FW_PI/8;
-		}
-
-		// update solution
-		solutionJointAngles += delta_theta;
-
-		// where are we at with the current solution?
-		current_wrt_0 = zero_to_world * getTcpWorldPosition(solutionJointAngles);
-		delta_p = target_wrt_0 - current_wrt_0;
+	// if target was not reached, return current joint angles
+	if (solution.timed_out) {
+		cout << "IK solution timed out after " << solution.time_taken_micros << " microseconds" << endl;
+		return getJointAngles();
 	}
-	int time_taken = currentTimeMicros() - start_time;
-	cout << "IK solution converged in " << time_taken << " microseconds" << endl;
-	cout << solutionJointAngles << endl;
-	cout << "==============" << endl;
 
-	return solutionJointAngles;
+	// solution was reached
+	cout << "==============" << endl;
+	cout << "IK solution received in " << solution.time_taken_micros << " microseconds" << endl;
+	cout << solution.joint_angles << endl;
+	cout << "==============" << endl;
+	return solution.joint_angles;
 }
 
 Eigen::MatrixXf Robot::getJacobian(Eigen::VectorXf jointAngles) const {
@@ -219,7 +193,6 @@ Eigen::VectorXf Robot::getJointSpeeds() const
 	for (int i = 1; i < links_.size(); i++) {
 		speeds(i - 1) = links_[i].joint_speed;
 	}
-
 	return speeds;
 }
 
@@ -235,27 +208,21 @@ Eigen::VectorXf Robot::getJointAngles() const
 Eigen::VectorXf Robot::getTargetJointAngles() const
 {
 	Eigen::VectorXf angles(getNumJoints());
-	for (int i = 0; i < links_.size(); i++) {
+	for (int i = 1; i < links_.size(); i++) {
 		angles(i - 1) = links_[i].target_rotation;
 	}
 	return angles;
+}
+void Robot::setJointTargetAngles(Eigen::VectorXf angles) {
+	assert(angles.rows() == getNumJoints());
+	for (int i = 0; i < angles.rows(); i++) {
+		links_[i + 1].target_rotation = angles(i);
+	}
 }
 
 void Robot::setJointTargetAngle(unsigned index, float angle)
 {
 	links_[index].target_rotation = angle;
-}
-
-void Robot::incrJointAngle(unsigned index, float angle)
-{
-	links_[index].rotation += angle;
-	updateToWorldTransforms();
-}
-
-void Robot::setJointAngle(unsigned index, float angle)
-{
-	links_[index].rotation = angle;
-	updateToWorldTransforms();
 }
 
 void Robot::updateToWorldTransforms()

@@ -16,6 +16,12 @@
     <ClCompile Include="src\base\RobotGraphics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\base\InverseKinematics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\Link.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\base\App.hpp">
@@ -31,6 +37,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="src\base\InverseKinematics.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base\Link.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

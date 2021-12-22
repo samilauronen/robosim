@@ -104,27 +104,37 @@ bool App::handleEvent(const Window::Event& ev) {
 	}
 
 	if (ev.type == Window::EventType_KeyDown) {
-		static const float rot_incr = 0.05;
-		if (ev.key == FW_KEY_J)
-			//rob_->incrJointRotation(rot_incr);
-			(void)rot_incr;
-		else if (ev.key == FW_KEY_K)
-			//rob_->incrJointRotation(-rot_incr);
-			(void)rot_incr;
-		else if (ev.key == FW_KEY_R)
-			//rob_->setJointRotation(0.0f);
-			(void)rot_incr;
-		else if (ev.key == FW_KEY_ENTER && ik_) {
-			ik_ = false;
-			Eigen::VectorXf targetAngles = rob_->inverseKinematics(Vec3f(2, 1, 0.75));
-			for (int i = 0; i < targetAngles.rows(); i++) {
-				rob_->setJointTargetAngle(i + 1, targetAngles(i));
-			}
+		if (ev.key == FW_KEY_MOUSE_MIDDLE) {
+			// convert to normalized image coordinates
+			float x = ev.mousePos.x / (float)window_.getSize().x;
+			float y = ev.mousePos.y / (float)window_.getSize().y;
+			x = x * 2 - 1;
+			y = -(y * 2 - 1);
+
+			// grab camera attributes
+			float fov = camera_ctrl_.getFOV() * FW_PI / 180; // damn thing was in degrees!
+			Vec3f up = camera_ctrl_.getUp();
+			Vec3f direction = camera_ctrl_.getForward();
+			Vec3f horizontal = direction.cross(up);
+			Vec3f position = camera_ctrl_.getPosition();
+
+			// calculate distance from "image plane"
+			float dist = 1 / FW::tan(fov / 2);
+
+			// create ray
+			FW::Vec3f x_vec = x * horizontal.normalized();
+			FW::Vec3f y_vec = y * up.normalized();
+			FW::Vec3f dist_vec = dist * direction;
+			FW::Vec3f ray_vec = (dist_vec + x_vec + y_vec).normalized();
+
+			// ray should ge going from [position] towards [ray_vec]
+			float t = 1;
+			ray_start_ = position;
+			ray_end_ = position + ray_vec * t;
+
+			rob_->setTargetTcpPosition(ray_end_);
 		}
-		else if (ev.key == FW_KEY_N)
-			rob_->setSelectedJoint(rob_->getSelectedJoint() == 0 ? 0 : rob_->getSelectedJoint() - 1);
-		else if (ev.key == FW_KEY_M)
-			rob_->setSelectedJoint(clamp(rob_->getSelectedJoint()+1, 0u, (unsigned)rob_->getNumJoints()-1u));
+			
 	}
 
 	if (ev.type == Window::EventType_KeyDown) {
@@ -287,7 +297,6 @@ void App::render() {
 	Mat4f world_to_clip = P * C;
 
 	vector<Link> robot_links = rob_->getLinks();
-	int selected_joint = rob_->getSelectedJoint();
 
 	if (drawmode_ == MODE_SKELETON) {
 		// Draw the skeleton as a set of joint positions, connecting lines,
@@ -303,7 +312,21 @@ void App::render() {
 		glLoadMatrixf(&P(0,0));
 		glMatrixMode(GL_MODELVIEW);
 		glLoadMatrixf(&C(0,0));
-		RobotGraphics::renderSkeleton(robot_links, selected_joint);
+
+		// draw ray from camera
+		glLineWidth(2);
+		glBegin(GL_LINES);
+		glColor3f(1, 0, 0); // red
+		glVertex3f(ray_start_.x, ray_start_.y, ray_start_.z);
+		glVertex3f(ray_end_.x, ray_end_.y, ray_end_.z);
+		glEnd();
+		glPointSize(20);
+		glBegin(GL_POINTS);
+		glColor3f(0, 0, 1); // blue
+		glVertex3f(ray_end_.x, ray_end_.y, ray_end_.z);
+		glEnd();
+
+		RobotGraphics::renderSkeleton(robot_links);
 	}
 	else // mesh mode
 	{
@@ -311,7 +334,7 @@ void App::render() {
 			glPolygonMode(GL_FRONT, GL_LINE);
 			glPolygonMode(GL_BACK, GL_LINE);
 		}
-		std::vector<Vertex> vertices = RobotGraphics::getMeshVertices(robot_links, selected_joint);
+		std::vector<Vertex> vertices = RobotGraphics::getMeshVertices(robot_links);
 
 		float square_size = 0.2;
 		float grid_size = 50;
@@ -375,6 +398,13 @@ void App::render() {
 		glBindVertexArray(gl_.simple_vao);
 		glDrawArrays(GL_TRIANGLES, 0, (int)vertices.size());
 
+		// draw ik target
+		glPointSize(20);
+		glBegin(GL_POINTS);
+		glColor3f(0, 0, 1); // blue
+		glVertex3f(ray_end_.x, ray_end_.y, ray_end_.z);
+		glEnd();
+
 		// reset polygon mode
 		glPolygonMode(GL_FRONT, GL_FILL);
 		glPolygonMode(GL_BACK, GL_FILL);
@@ -402,21 +432,7 @@ void App::render() {
 	ss << "TCP speed: " << tcpSpeed(0) << ", " << tcpSpeed(1) << ", " << tcpSpeed(2) << " Angular: " << tcpSpeed(3) << ", " << tcpSpeed(4) << ", " << tcpSpeed(5) << endl;
 	ss << endl;
 
-
-	Link selected_link = rob_->getLinks()[rob_->getSelectedJoint()];
-	ss << endl << endl;
-	ss <<"to_parent for joint " << rob_->getSelectedJoint() + 1 << "/" << rob_->getNumJoints() << endl;
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++) {
-			float value1 = (F64)selected_link.link_matrix.get(i, j);
-			if (value1 < 0.001 && value1 > -0.001) value1 = 0;
-			ss << std::setw(3) << value1 << "  ";
-		}
-		ss << endl;
-	}
-
-	common_ctrl_.message(ss.str().c_str(), "matrices");
+	common_ctrl_.message(ss.str().c_str(), "info");
 }
 
 void FW::init(void) {

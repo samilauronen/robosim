@@ -70,6 +70,8 @@ private:
 
 	glGeneratedIndices	gl_;
 
+	FW::Vec3f ray_start_, ray_end_;
+
 	std::unique_ptr<Robot>	rob_;
 };
 

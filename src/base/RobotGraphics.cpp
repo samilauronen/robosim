@@ -3,9 +3,7 @@
 
 using namespace std;
 
-
-
-void RobotGraphics::renderSkeleton(vector<Link> links, int selected_joint)
+void RobotGraphics::renderSkeleton(vector<Link> links)
 {
 	glEnable(GL_POINT_SMOOTH);
 	glPointSize(15);
@@ -32,12 +30,6 @@ void RobotGraphics::renderSkeleton(vector<Link> links, int selected_joint)
 
 		bool is_tcp_frame = i + 1 == links.size();
 
-		// draw target for IK
-		Vec3f ikTarget = Vec3f(2, 1, 0.75);
-		glBegin(GL_POINTS);
-		glVertex3f(ikTarget.x, ikTarget.y, ikTarget.z);
-		glEnd();
-
 		// world-position of the current frame origin
 		Vec3f pos = current_trans * Vec3f(0, 0, 0);
 
@@ -45,14 +37,10 @@ void RobotGraphics::renderSkeleton(vector<Link> links, int selected_joint)
 		// only draw if the current frame location is also a joint
 		if (!is_tcp_frame) {
 			glBegin(GL_POINTS);
-			if (selected_joint == i)
-				glColor3f(1.0f, 0.2f, 0.2f);
-			else
-				glColor3f(1.0f, 1.0f, 1.0f);
+			glColor3f(1.0f, 1.0f, 1.0f);
 			glVertex3f(pos.x, pos.y, pos.z);
 			glEnd();
 		}
-
 
 		// NOTE: disable this if it causes problems with any calculations in the future!
 		// rotate frames with joint rotation, even though that doesnt follow DH standard?
@@ -67,7 +55,6 @@ void RobotGraphics::renderSkeleton(vector<Link> links, int selected_joint)
 		if (is_tcp_frame) {
 			glLineWidth(2);
 			scale = 0.1;
-			// (current_trans * Vec3f(0, 0, 0)).print(); cerr << endl;
 		}
 		else {
 			glLineWidth(1);
@@ -119,9 +106,7 @@ void RobotGraphics::renderSkeleton(vector<Link> links, int selected_joint)
 	}
 }
 
-
-vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links, int selected_joint) {
-
+vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links) {
 	vector<Vertex> allVertices;
 
 	float linkLength = 0;
@@ -217,13 +202,6 @@ vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links, int selected_j
 		// create mesh
 		JointMesh joint(radius, length);
 		vector<Vertex> meshVertices = joint.getVertices();
-
-		// set joint mesh color different if it is selected
-		if (selected_joint == i) {
-			for (auto& v : meshVertices) {
-				v.color = JOINT_SELECTED_COLOR;
-			}
-		}
 
 		// orient along the joint's z-axis 
 		Mat3f jointBasisVecs = links[i].to_world.getXYZ();

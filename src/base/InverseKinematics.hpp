@@ -1,21 +1,33 @@
 #include <array>
 
+#include "Eigen/Dense"
 #include "base/Math.hpp"
+#include "Robot.hpp"
+#include "utility.hpp"
 
-namespace InverseKinematics {
-	// base class for IK solvers for robots with any number of joints
-	template <unsigned N_JOINTS>
-	class IKSolver {
-		// takes in desired position and orientation of TCP frame, returns joint angles to achieve that
-		virtual std::array<float, N_JOINTS> solve(FW::Vec3f location, FW::Vec3f orientation) = 0;
-	};
+// TODO: Add numerical IK solvers based on the paper recommendations
+// http://math.ucsd.edu/~sbuss/ResearchWeb/ikmethods/iksurvey.pdf
+// Especially Jacobian Transpose is said to be easy to implments, fast and accurate. Try that.
 
-	// IK solver for the UR5 robot with six joints
-	class UR5_IKSolver : IKSolver<6> {
+// namespace contains different IK solver functions for use with the robot
+namespace IK {
 
-	};
+const float DISTANCE_THRESHOLD = 0.0001f;
+const float	TIMEOUT_MICROS = 100000;
 
-	// TODO: Add numerical IK solvers based on the paper recommendations
-	// http://math.ucsd.edu/~sbuss/ResearchWeb/ikmethods/iksurvey.pdf
-	// Especially Jacobian Transpose is said to be easy to implments, fast and accurate. Try that.
-}
+// represents a solution to the inverse kinematics problem
+// if timed_out = true, then the target is unreachable
+// and joint_angles will be whatever the algorithm ended at on its last iteration
+struct IKSolution {
+	Eigen::VectorXf joint_angles;
+	uint64_t		time_taken_micros;
+	bool			timed_out;
+};
+
+// The first IK solver, not particularly fast or accurate, but gets the job done
+class SimpleIKSolver {
+public:
+	static IKSolution solve(const Robot& robot, const FW::Vec3f& tcp_target_wrt_world); 
+};
+
+} // namespace IK
