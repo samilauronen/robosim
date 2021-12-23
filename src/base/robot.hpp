@@ -97,12 +97,11 @@ public:
 	std::vector<FW::Mat4f>		getToWorldTransforms() const;
 	const std::vector<Link>&	getLinks() const;
 
-	size_t					getNumJoints() const { return links_.size() - 1;  /* zeroth link is not counted */ };
-	Mat4f					getZeroToWorld() const { return (worldToBase_ * baseToZero_).inverted(); };
+	size_t					getNumJoints() const { return links_.size(); };
+	Mat4f					getWorldToBase() const { return worldToBase_; };
 
 private:
 	Mat4f worldToBase_;
-	Mat4f baseToZero_;
 
 	void					updateToWorldTransforms();
 	std::vector<DhParam>	loadDhParams(const std::string filename);

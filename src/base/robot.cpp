@@ -26,14 +26,19 @@ using namespace std;
 * ImGui for more awesome ui?
 */
 
+
+/*
+* Note:
+* Robot frames are assigned with zero-based indexing, so that the first joint has index 0
+* and it moves link 0, at the end of which is frame 0.
+* The first frame, which is conventionally the zero:th frame, is now simply the base frame
+* This means that the worldToBase transform describes what conventionally would be worldToBase * baseToZero
+*/
 Robot::Robot(std::string dh_param_filename, FW::Vec3f location)
 {
-	// base to 0 frame
-	Mat3f rotation = Mat3f::rotation(Vec3f(1, 0, 0), -FW_PI / 2);
-	baseToZero_ = combineToMat4f(rotation, Vec3f(0, 0, 0));
-
-	// set the transformation from world to base, no rotation here, just set the location
-	worldToBase_ = combineToMat4f(Mat3f::rotation(Vec3f(0, 0, 0), 0), location);
+	// set the transformation from world to base, whicj includes rotation to turn z-axis upwards
+	// and the robots location in the world
+	worldToBase_ = combineToMat4f(Mat3f::rotation(Vec3f(1, 0, 0), -FW_PI / 2), location);
 
 	// create kinematic model and links of the robot
 	vector<DhParam> params = loadDhParams(dh_param_filename);
@@ -45,7 +50,7 @@ void Robot::update(float dt_millis)
 	// in rad/s
 	const float JOINT_SPEED = FW_PI / 3;
 
-	for (int i = 1; i < links_.size(); i++) {
+	for (int i = 0; i < links_.size(); i++) {
 		float target = getTargetJointAngle(i);
 		float current = getJointAngle(i);
 
@@ -78,13 +83,9 @@ FW::Vec3f Robot::getTcpWorldPosition() const
 
 FW::Vec3f Robot::getTcpWorldPosition(Eigen::VectorXf jointAngles) const
 {
-	// TODO: seriously gotta do something about this
-	Eigen::VectorXf jointAnglesTemp(jointAngles.rows() + 1);
-	jointAnglesTemp << 0.0f, jointAngles;
-
-	Mat4f to_world = worldToBase_ * baseToZero_;
+	Mat4f to_world = worldToBase_;
 	for (int i = 0; i < links_.size(); i++) {
-		to_world *= links_[i].eval_link_matrix(jointAnglesTemp(i));
+		to_world *= links_[i].eval_link_matrix(jointAngles(i));
 	}
 	return to_world * Vec3f(0, 0, 0);
 }
@@ -128,15 +129,12 @@ Eigen::MatrixXf Robot::getJacobian(Eigen::VectorXf jointAngles) const {
 
 	Eigen::MatrixXf jacobian(n_rows, n_cols);
 
-	// TODO: also has angle for zeroth link, do something about this shit!
-	Eigen::VectorXf jointAnglesTemp(jointAngles.rows() + 1);
-	jointAnglesTemp << 0.0f, jointAngles;
-
-	// returns the transform 0_T_i as Eigen::Matrix4f
-	auto get_zero_to_i = [&](int i) {
+	// returns the transform B_T_i as Eigen::Matrix4f
+	// returns B_T_B if i = -1
+	auto get_base_to_i = [&](int i) {
 		Mat4f fwres;
 		for (int j = 0; j <= i; j++) {
-			fwres *= links_[j].eval_link_matrix(jointAnglesTemp(j));
+			fwres *= links_[j].eval_link_matrix(jointAngles(j));
 		}
 
 		Eigen::Matrix4f res;
@@ -153,28 +151,29 @@ Eigen::MatrixXf Robot::getJacobian(Eigen::VectorXf jointAngles) const {
 	};
 
 	// https://automaticaddison.com/the-ultimate-guide-to-jacobian-matrices-for-robotics/
-	Eigen::Matrix4f zero_to_n = get_zero_to_i(links_.size() - 1);
-	Eigen::Vector3f transl_0_to_n = zero_to_n.col(3).head<3>();
+	Eigen::Matrix4f base_to_n = get_base_to_i(links_.size() - 1);
+	Eigen::Vector3f transl_base_to_n = base_to_n.col(3).head<3>();
 
 	// transformations from frame zero to frame i
-	Eigen::Matrix4f tf_0_to_i;
-	Eigen::Matrix3f rot_0_to_i;
-	Eigen::Vector3f transl_0_to_i;
+	Eigen::Matrix4f tf_b_to_i;
+	Eigen::Matrix3f rot_b_to_i;
+	Eigen::Vector3f transl_b_to_i;
 
 	Eigen::Vector3f z_vec = Eigen::Vector3f(0, 0, 1);
 
 	// fill the matrix column-by-column
-	for (int i = 0; i < getNumJoints(); i++) {
-		tf_0_to_i = get_zero_to_i(i);
-		rot_0_to_i = tf_0_to_i.block<3, 3>(0, 0);
-		transl_0_to_i = tf_0_to_i.block<3, 1>(0, 3);
+	int numJoints = (int)links_.size();
+	for (int i = -1; i < numJoints - 1; i++) {
+		tf_b_to_i = get_base_to_i(i);
+		rot_b_to_i = tf_b_to_i.block<3, 3>(0, 0);
+		transl_b_to_i = tf_b_to_i.block<3, 1>(0, 3);
 
-		Eigen::Vector3f upper_part = (rot_0_to_i * z_vec).cross(transl_0_to_n - transl_0_to_i);
-		Eigen::Vector3f lower_part = rot_0_to_i * z_vec;
+		Eigen::Vector3f upper_part = (rot_b_to_i * z_vec).cross(transl_base_to_n - transl_b_to_i);
+		Eigen::Vector3f lower_part = rot_b_to_i * z_vec;
 
 		Eigen::Vector<float, 6> col;
 		col << upper_part, lower_part;
-		jacobian.col(i) = col;
+		jacobian.col(i + 1) = col;
 	}
 
 	return jacobian;
@@ -190,8 +189,8 @@ Eigen::VectorXf Robot::getJointSpeeds() const
 {
 	Eigen::VectorXf speeds(getNumJoints());
 
-	for (int i = 1; i < links_.size(); i++) {
-		speeds(i - 1) = links_[i].joint_speed;
+	for (int i = 0; i < links_.size(); i++) {
+		speeds(i) = links_[i].joint_speed;
 	}
 	return speeds;
 }
@@ -199,8 +198,8 @@ Eigen::VectorXf Robot::getJointSpeeds() const
 Eigen::VectorXf Robot::getJointAngles() const
 {
 	Eigen::VectorXf angles(getNumJoints());
-	for (int i = 1; i < links_.size(); i++) {
-		angles(i - 1) = links_[i].rotation;
+	for (int i = 0; i < links_.size(); i++) {
+		angles(i) = links_[i].rotation;
 	}
 	return angles;
 }
@@ -208,15 +207,15 @@ Eigen::VectorXf Robot::getJointAngles() const
 Eigen::VectorXf Robot::getTargetJointAngles() const
 {
 	Eigen::VectorXf angles(getNumJoints());
-	for (int i = 1; i < links_.size(); i++) {
-		angles(i - 1) = links_[i].target_rotation;
+	for (int i = 0; i < links_.size(); i++) {
+		angles(i) = links_[i].target_rotation;
 	}
 	return angles;
 }
 void Robot::setJointTargetAngles(Eigen::VectorXf angles) {
 	assert(angles.rows() == getNumJoints());
 	for (int i = 0; i < angles.rows(); i++) {
-		links_[i + 1].target_rotation = angles(i);
+		links_[i].target_rotation = angles(i);
 	}
 }
 
@@ -260,7 +259,7 @@ void Robot::updateToWorldTransforms()
 	// for link 2: W_T_2
 	// etc...
 	// index always tells which frame is the result of the transformation
-	Mat4f current_transform = worldToBase_ * baseToZero_;
+	Mat4f current_transform = worldToBase_;
 	for (int i = 0; i < links_.size(); i++) {
 		current_transform *= links_[i].link_matrix;
 		links_[i].to_world = current_transform;
@@ -354,15 +353,8 @@ std::vector<DhParam> Robot::loadDhParams(const std::string filename)
 
 void Robot::buildKinematicModel(const std::vector<DhParam>& params)
 {
-	Link link_zero;
-	link_zero.p = DhParam{};
-	link_zero.rotation = 0;
-	link_zero.target_rotation = 0;
-	link_zero.joint_speed = 0;
-	link_zero.is_locked = true;	// should not be rotated
-	links_.push_back(link_zero);
 
-	int link_index = 1;
+	int link_index = 0;
 	for (const DhParam& p : params) {
 
 		cout << "Parameters for link " << link_index << ":" << endl;

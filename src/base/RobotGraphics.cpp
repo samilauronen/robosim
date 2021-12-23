@@ -3,26 +3,41 @@
 
 using namespace std;
 
-void RobotGraphics::renderSkeleton(vector<Link> links)
+
+void RobotGraphics::drawFrame(Mat4f world_to_frame, float scale) {
+	Vec3f origin = world_to_frame * Vec3f(0, 0, 0);
+	Mat3f orientation = world_to_frame.getXYZ();
+
+	Vec3f i = orientation.getCol(0) * scale;
+	Vec3f j = orientation.getCol(1) * scale;
+	Vec3f k = orientation.getCol(2) * scale;
+
+	glBegin(GL_LINES);
+	glColor3f(1, 0, 0);
+	glVertex3f(origin.x, origin.y, origin.z);
+	glVertex3f(origin.x + i.x, origin.y + i.y, origin.z + i.z);
+	glColor3f(0, 1, 0); // green
+	glVertex3f(origin.x, origin.y, origin.z);
+	glVertex3f(origin.x + j.x, origin.y + j.y, origin.z + j.z);
+	glColor3f(0, 0, 1); // blue
+	glVertex3f(origin.x, origin.y, origin.z);
+	glVertex3f(origin.x + k.x, origin.y + k.y, origin.z + k.z);
+	glEnd();
+}
+
+void RobotGraphics::renderSkeleton(vector<Link> links, Mat4f worldToBase)
 {
 	glEnable(GL_POINT_SMOOTH);
 	glPointSize(15);
 
 	// draw world origin frame:
 	glLineWidth(2);
-	glBegin(GL_LINES);
 	float scale = 0.3;
-	Vec3f o = Vec3f(0, 0, 0);
-	glColor3f(1, 0, 0); // red
-	glVertex3f(o.x, o.y, o.z);
-	glVertex3f(o.x + scale, o.y, o.z);
-	glColor3f(0, 1, 0); // green
-	glVertex3f(o.x, o.y, o.z);
-	glVertex3f(o.x, o.y + scale, o.z);
-	glColor3f(0, 0, 1); // blue
-	glVertex3f(o.x, o.y, o.z);
-	glVertex3f(o.x, o.y, o.z + scale);
-	glEnd();
+	drawFrame(Mat4f{}, scale);
+
+	// draw robot base frame
+	scale = 0.1;
+	drawFrame(worldToBase, scale);
 
 	// draw link frames
 	for (int i = 0; i < links.size(); i++) {
@@ -30,24 +45,26 @@ void RobotGraphics::renderSkeleton(vector<Link> links)
 
 		bool is_tcp_frame = i + 1 == links.size();
 
-		// world-position of the current frame origin
-		Vec3f pos = current_trans * Vec3f(0, 0, 0);
+		Vec3f origin = current_trans * Vec3f(0, 0, 0);
 
 		// draw a point at the origin of the new frame
 		// only draw if the current frame location is also a joint
 		if (!is_tcp_frame) {
 			glBegin(GL_POINTS);
 			glColor3f(1.0f, 1.0f, 1.0f);
-			glVertex3f(pos.x, pos.y, pos.z);
+			glVertex3f(origin.x, origin.y, origin.z);
 			glEnd();
 		}
 
 		// NOTE: disable this if it causes problems with any calculations in the future!
 		// rotate frames with joint rotation, even though that doesnt follow DH standard?
 		bool showJointRotation = false;
-		Mat3f jointRotation;
-		if (showJointRotation && i < links.size()) {
-			jointRotation = Mat3f::rotation(Vec3f(0, 0, 1), links[i].rotation);
+		Mat4f jointRotation;
+		if (showJointRotation && !is_tcp_frame && (i-1) > 0 ) {
+			Mat3f rot = Mat3f::rotation(Vec3f(0, 0, 1), links[i - 1].rotation);
+			jointRotation.setCol(0, Vec4f(rot.getCol(0), 0));
+			jointRotation.setCol(1, Vec4f(rot.getCol(1), 0));
+			jointRotation.setCol(2, Vec4f(rot.getCol(2), 0));
 		}
 		// END NOTE ===================================================================
 
@@ -60,53 +77,42 @@ void RobotGraphics::renderSkeleton(vector<Link> links)
 			glLineWidth(1);
 			scale = 0.075;
 		}
-		glBegin(GL_LINES);
-		Mat3f frame_rotation = current_trans.getXYZ() * jointRotation;
-		Vec3f new_i = frame_rotation.getCol(0).normalized() * scale;
-		Vec3f new_j = frame_rotation.getCol(1).normalized() * scale;
-		Vec3f new_k = frame_rotation.getCol(2).normalized() * scale;
-		glColor3f(1, 0, 0); // red
-		glVertex3f(pos.x, pos.y, pos.z);
-		glVertex3f(pos.x + new_i.x, pos.y + new_i.y, pos.z + new_i.z);
-		glColor3f(0, 1, 0); // green
-		glVertex3f(pos.x, pos.y, pos.z);
-		glVertex3f(pos.x + new_j.x, pos.y + new_j.y, pos.z + new_j.z);
-		glColor3f(0, 0, 1); // blue
-		glVertex3f(pos.x, pos.y, pos.z);
-		glVertex3f(pos.x + new_k.x, pos.y + new_k.y, pos.z + new_k.z);
-		glEnd();
+		drawFrame(current_trans * jointRotation, scale);
 
+		// draw links between frames
 		glLineWidth(1);
 		glBegin(GL_LINES);
-
-		// if parent frame exists, draw a line from it to the current frame (symbolizes a link)
 		int parent = i - 1;
+		Vec3f parent_world_pos, after_z_screw;
+		glColor3f(1, 1, 1);
 		if (parent != -1) {
-			glColor3f(1, 1, 1);
-
-			// may draw tow lines, accounting for translation in z and x
-			Vec3f parent_world_pos = links[parent].to_world * Vec3f(0, 0, 0);
-			Vec3f after_z_screw = links[parent].to_world * links[i].z_screw * Vec3f(0, 0, 0);
-
-			float z_screw_len = (after_z_screw - parent_world_pos).length();
-			float x_screw_len = (pos - after_z_screw).length();
-
-			// draw line if it is longer than some threshold,
-			if (z_screw_len > 0.01) {
-				glVertex3f(parent_world_pos.x, parent_world_pos.y, parent_world_pos.z);
-				glVertex3f(after_z_screw.x, after_z_screw.y, after_z_screw.z);
-			}
-			if (x_screw_len > 0.01) {
-				glVertex3f(after_z_screw.x, after_z_screw.y, after_z_screw.z);
-				glVertex3f(pos.x, pos.y, pos.z);
-			}
+			// may draw two lines, accounting for translation in z and x
+			parent_world_pos = links[parent].to_world * Vec3f(0, 0, 0);
+			after_z_screw = links[parent].to_world * links[i].z_screw * Vec3f(0, 0, 0);
+		}
+		else {
+			parent_world_pos = worldToBase * Vec3f(0, 0, 0);
+			after_z_screw = worldToBase * links[i].z_screw * Vec3f(0, 0, 0);
 		}
 
+		float z_screw_len = (after_z_screw - parent_world_pos).length();
+		float x_screw_len = (origin - after_z_screw).length();
+
+		// draw line if it is longer than some threshold,
+		if (z_screw_len > 0.01) {
+			glVertex3f(parent_world_pos.x, parent_world_pos.y, parent_world_pos.z);
+			glVertex3f(after_z_screw.x, after_z_screw.y, after_z_screw.z);
+		}
+		if (x_screw_len > 0.01) {
+			glVertex3f(after_z_screw.x, after_z_screw.y, after_z_screw.z);
+			glVertex3f(origin.x, origin.y, origin.z);
+		}
+		
 		glEnd();
 	}
 }
 
-vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links) {
+vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links, Mat4f world_to_base) {
 	vector<Vertex> allVertices;
 
 	float linkLength = 0;
@@ -116,15 +122,15 @@ vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links) {
 	float size_reduction_factor = 0.8;
 
 	// link meshes
-	for (unsigned i = 1; i < links.size(); i++) {
-		int parent = i - 1;
-
+	for (unsigned i = 0; i < links.size(); i++) {
+		Mat4f parent_to_world = i == 0 ? world_to_base : links[i - 1].to_world;
+		
 		// position of current (i:th) frame
 		Vec3f current_world_pos = links[i].to_world * Vec3f(0, 0, 0);
 
 		// position of parent frame and the (non-existent) frame after only applying z-screw component of the next link matrix
-		Vec3f parent_world_pos = links[parent].to_world * Vec3f(0, 0, 0);
-		Vec3f after_z_screw = links[parent].to_world * links[i].z_screw * Vec3f(0, 0, 0);
+		Vec3f parent_world_pos = parent_to_world * Vec3f(0, 0, 0);
+		Vec3f after_z_screw = parent_to_world * links[i].z_screw * Vec3f(0, 0, 0);
 
 		// lengths of the possible links
 		float z_link_len = (after_z_screw - parent_world_pos).length();
@@ -140,7 +146,7 @@ vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links) {
 			LinkMesh z_link(init_link_thickness * FW::pow(size_reduction_factor, i), z_link_len);
 			vector<Vertex> meshVertices = z_link.getVertices();
 
-			Mat3f basisVecs = (links[parent].to_world * links[i].z_screw).getXYZ();
+			Mat3f basisVecs = (parent_to_world * links[i].z_screw).getXYZ();
 
 			Vec3f i, j, k;
 			k = (after_z_screw - parent_world_pos).normalized();
@@ -194,7 +200,7 @@ vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links) {
 	}
 
 	// joint meshes (size - 1 because last frame is not a joint, it's TCP frame)
-	for (unsigned i = 0; i < links.size() - 1; i++) {
+	for (int i = -1; i < (int)links.size() - 1; i++) {
 		float reduction = FW::pow(size_reduction_factor, i);
 		float radius = init_joint_radius * reduction;
 		float length = init_joint_length * reduction;
@@ -203,14 +209,15 @@ vector<Vertex> RobotGraphics::getMeshVertices(vector<Link> links) {
 		JointMesh joint(radius, length);
 		vector<Vertex> meshVertices = joint.getVertices();
 
+		Mat4f link_to_world = i == -1 ? world_to_base : links[i].to_world;
+
 		// orient along the joint's z-axis 
-		Mat3f jointBasisVecs = links[i].to_world.getXYZ();
-		Mat3f orientation = jointBasisVecs;
+		Mat3f orientation = link_to_world.getXYZ();
 
 		// translate to world position of joint 
-		Vec3f translation = links[i].to_world * Vec3f(0, 0, 0);
+		Vec3f translation = link_to_world * Vec3f(0, 0, 0);
 
-		// create transformation matrix and transform vertices with it  
+		// apply transformation to vertices
 		Mat4f transformation = combineToMat4f(orientation, translation);
 		for (auto& v : meshVertices) {
 			v.position = transformation * v.position;

@@ -4,15 +4,15 @@ namespace IK {
 
 IKSolution SimpleIKSolver::solve(const Robot& robot, const FW::Vec3f& tcp_target_wrt_world) {
 	using namespace FW;
-	Mat4f zero_to_world = robot.getZeroToWorld();
-	Vec3f target_wrt_0 = zero_to_world * tcp_target_wrt_world;
+	Mat4f base_to_world = robot.getWorldToBase().inverted();
+	Vec3f target_wrt_base = base_to_world * tcp_target_wrt_world;
 
 	// updated every iteration
 	Eigen::VectorXf solutionJointAngles = robot.getJointAngles();
 
 	// current position and it's difference from target
-	Vec3f current_wrt_0 = zero_to_world * robot.getTcpWorldPosition();
-	Vec3f delta_p = target_wrt_0 - current_wrt_0;
+	Vec3f current_wrt_base = base_to_world * robot.getTcpWorldPosition();
+	Vec3f delta_p = target_wrt_base - current_wrt_base;
 
 	uint64_t start_time = currentTimeMicros();
 
@@ -39,8 +39,8 @@ IKSolution SimpleIKSolver::solve(const Robot& robot, const FW::Vec3f& tcp_target
 		solutionJointAngles += delta_theta;
 
 		// where are we at with the current solution?
-		current_wrt_0 = zero_to_world * robot.getTcpWorldPosition(solutionJointAngles);
-		delta_p = target_wrt_0 - current_wrt_0;
+		current_wrt_base = base_to_world * robot.getTcpWorldPosition(solutionJointAngles);
+		delta_p = target_wrt_base - current_wrt_base;
 	}
 	int time_taken = currentTimeMicros() - start_time;
 	bool timed_out = time_taken >= TIMEOUT_MICROS;

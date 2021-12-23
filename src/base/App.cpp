@@ -151,7 +151,7 @@ bool App::handleEvent(const Window::Event& ev) {
 
 	// set robot joint rotations to slider values
 	for (int i = 0; i < joint_angle_controls_.size(); i++) {
-		//rob_->setJointTargetAngle(i + 1, joint_angle_controls_[i]);
+		rob_->setJointTargetAngle(i, joint_angle_controls_[i]);
 	}
 
 	camera_ctrl_.handleEvent(ev);
@@ -326,7 +326,7 @@ void App::render() {
 		glVertex3f(ray_end_.x, ray_end_.y, ray_end_.z);
 		glEnd();
 
-		RobotGraphics::renderSkeleton(robot_links);
+		RobotGraphics::renderSkeleton(robot_links, rob_->getWorldToBase());
 	}
 	else // mesh mode
 	{
@@ -334,7 +334,7 @@ void App::render() {
 			glPolygonMode(GL_FRONT, GL_LINE);
 			glPolygonMode(GL_BACK, GL_LINE);
 		}
-		std::vector<Vertex> vertices = RobotGraphics::getMeshVertices(robot_links);
+		std::vector<Vertex> vertices = RobotGraphics::getMeshVertices(robot_links, rob_->getWorldToBase());
 
 		float square_size = 0.2;
 		float grid_size = 50;
