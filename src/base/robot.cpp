@@ -2,19 +2,20 @@
 #include "Utility.hpp"
 #include "InverseKinematics.hpp"
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
 #include <algorithm>
 #include <assert.h>
 
+using namespace FW;
 using namespace std;
 
 // TODO:
 /*
 * Don't create meshes again for every frame, that just sucks! Make RobotGraphics more oop style
 * Convert all maths to using eigen
+* Unify naming conventions, camelCase vs snake_case
+* Use GLU for the meshes (should be included with OpenGL, if not, download it. It's different from GLUT which is not recommended anymore)
 * Use GLFW or some other window manager
+* Think about the naming convention of matrices: to vs from as left or right multiply
 * Use ImGui for UI
 * Make your own camera class, or use an existing one (from GLFW?)
 * Make prismatic joints possible?
@@ -25,7 +26,6 @@ using namespace std;
 * Dynamics???
 * ImGui for more awesome ui?
 */
-
 
 /*
 * Note:
@@ -41,7 +41,7 @@ Robot::Robot(std::string dh_param_filename, FW::Vec3f location)
 	worldToBase_ = combineToMat4f(Mat3f::rotation(Vec3f(1, 0, 0), -FW_PI / 2), location);
 
 	// create kinematic model and links of the robot
-	vector<DhParam> params = loadDhParams(dh_param_filename);
+	vector<DhParam> params = loadDhParamsFromFile(dh_param_filename);
 	buildKinematicModel(params);
 }
 
@@ -57,20 +57,12 @@ void Robot::update(float dt_millis)
 		float diff = current - target;
 
 		if (FW::abs(diff) > JOINT_POSITIONAL_ACCURACY) {
-			links_[i].is_moving = true;
-			if (current < target) {
-				links_[i].joint_speed = JOINT_SPEED;
-				links_[i].rotation += links_[i].joint_speed * (dt_millis / 1000);
-				
-			}
-			else {
-				links_[i].joint_speed = -JOINT_SPEED;
-				links_[i].rotation += links_[i].joint_speed * (dt_millis / 1000);
-			}
+			links_[i].setJointSpeed(current < target ? JOINT_SPEED : -JOINT_SPEED);
+			// maybe call joint.update here?
+			links_[i].setJointRotation(links_[i].getJointRotation() + links_[i].getJointSpeed() * (dt_millis / 1000));
 		}
 		else {
-			links_[i].is_moving = false;
-			links_[i].joint_speed = 0;
+			links_[i].setJointSpeed(0);
 		}
 	}
 	updateToWorldTransforms();
@@ -78,14 +70,14 @@ void Robot::update(float dt_millis)
 
 FW::Vec3f Robot::getTcpWorldPosition() const
 {
-	return links_[links_.size() - 1].to_world * Vec3f(0, 0, 0);
+	return links_[links_.size() - 1].getToWorld() * Vec3f(0, 0, 0);
 }
 
 FW::Vec3f Robot::getTcpWorldPosition(Eigen::VectorXf jointAngles) const
 {
 	Mat4f to_world = worldToBase_;
 	for (int i = 0; i < links_.size(); i++) {
-		to_world *= links_[i].eval_link_matrix(jointAngles(i));
+		to_world *= links_[i].evalLinkMatrix(jointAngles(i));
 	}
 	return to_world * Vec3f(0, 0, 0);
 }
@@ -134,7 +126,7 @@ Eigen::MatrixXf Robot::getJacobian(Eigen::VectorXf jointAngles) const {
 	auto get_base_to_i = [&](int i) {
 		Mat4f fwres;
 		for (int j = 0; j <= i; j++) {
-			fwres *= links_[j].eval_link_matrix(jointAngles(j));
+			fwres *= links_[j].evalLinkMatrix(jointAngles(j));
 		}
 
 		Eigen::Matrix4f res;
@@ -190,7 +182,7 @@ Eigen::VectorXf Robot::getJointSpeeds() const
 	Eigen::VectorXf speeds(getNumJoints());
 
 	for (int i = 0; i < links_.size(); i++) {
-		speeds(i) = links_[i].joint_speed;
+		speeds(i) = links_[i].getJointSpeed();
 	}
 	return speeds;
 }
@@ -199,7 +191,7 @@ Eigen::VectorXf Robot::getJointAngles() const
 {
 	Eigen::VectorXf angles(getNumJoints());
 	for (int i = 0; i < links_.size(); i++) {
-		angles(i) = links_[i].rotation;
+		angles(i) = links_[i].getJointRotation();
 	}
 	return angles;
 }
@@ -208,20 +200,20 @@ Eigen::VectorXf Robot::getTargetJointAngles() const
 {
 	Eigen::VectorXf angles(getNumJoints());
 	for (int i = 0; i < links_.size(); i++) {
-		angles(i) = links_[i].target_rotation;
+		angles(i) = links_[i].getJointTargetRotation();
 	}
 	return angles;
 }
 void Robot::setJointTargetAngles(Eigen::VectorXf angles) {
 	assert(angles.rows() == getNumJoints());
 	for (int i = 0; i < angles.rows(); i++) {
-		links_[i].target_rotation = angles(i);
+		links_[i].setJointTargetRotation(angles(i));
 	}
 }
 
 void Robot::setJointTargetAngle(unsigned index, float angle)
 {
-	links_[index].target_rotation = angle;
+	links_[index].setJointTargetRotation(angle);
 }
 
 void Robot::updateToWorldTransforms()
@@ -229,28 +221,10 @@ void Robot::updateToWorldTransforms()
 	Vec3f translation;
 	Mat3f rotation;
 
+	// TODO: this may not be necessary, if i make the joint update it's link matrix on its own every time an update cycle happens
 	// first update the link matrix, since rotation may have changed
 	for (int i = 0; i < links_.size(); i++) {
-		Link& j = links_[i];
-
-		// https://www.youtube.com/watch?v=nuB_7BkYNMk
-		translation = Vec3f(0, 0, j.p.d);						// first move up so that we are at the level of the common normal
-		rotation = Mat3f::rotation(Vec3f(0, 0, 1), j.rotation);	// then rotate around z to align x with next x
-
-		Mat4f z_screw = combineToMat4f(rotation, translation);  // translation and rotation with respect to z
-
-		// after applying the z-screw, we are at the correct level and our x-axis points in the correct direction
-		// now move towards our new x by link length
-		translation = Vec3f(j.p.a, 0, 0);
-		rotation = Mat3f::rotation(Vec3f(1, 0, 0), j.p.alpha);	// apply link twist (rotate around x-axis)
-
-		Mat4f x_screw = combineToMat4f(rotation, translation);	// translation and rotation with respect to x
-
-		Mat4f link_matrix = z_screw * x_screw;					// resulting link matrix
-
-		j.z_screw = z_screw;
-		j.x_screw = x_screw;
-		j.link_matrix = link_matrix;
+		links_[i].updateLinkMatrix(links_[i].getJointRotation());
 	}
 
 	// now chain the link transformations like so:
@@ -261,114 +235,54 @@ void Robot::updateToWorldTransforms()
 	// index always tells which frame is the result of the transformation
 	Mat4f current_transform = worldToBase_;
 	for (int i = 0; i < links_.size(); i++) {
-		current_transform *= links_[i].link_matrix;
-		links_[i].to_world = current_transform;
+		current_transform *= links_[i].getLinkMatrix();
+		links_[i].setToWorld(current_transform);
 	}
 }
 
-const std::vector<Link>& Robot::getLinks() const
+std::vector<JointedLink> Robot::getLinks() const
 {
 	return links_;
+}
+
+void Robot::renderSkeleton() const
+{
+	for (const JointedLink& link : links_) {
+		link.renderSkeleton();
+	}
+}
+
+std::vector<Vertex> Robot::getMeshVertices() const
+{
+	std::vector<Vertex> allVerts;
+	for (int i = 0; i < links_.size(); i++) {
+		std::vector<Vertex> linkVertices = links_[i].getMeshVertices(i);
+		allVerts.insert(allVerts.end(), linkVertices.begin(), linkVertices.end());
+	}
+	return allVerts;
 }
 
 std::vector<FW::Mat4f> Robot::getToWorldTransforms() const
 {
 	vector<Mat4f> transforms;
 	for (int i = 0; i < links_.size(); i++) {
-		transforms.push_back(links_[i].to_world);
+		transforms.push_back(links_[i].getToWorld());
 	}
 	return transforms;
 }
 
-std::vector<DhParam> Robot::loadDhParams(const std::string filename)
+void Robot::buildKinematicModel(const std::vector<DhParam>& dh_params)
 {
-	ifstream file_input(filename, ios::in);
-	string line;
-
-	std::vector<DhParam> params;
-
-	while (getline(file_input, line)) {
-		if (line[0] == '#') continue;
-
-		stringstream ss(line);
-		DhParam p;
-		string sink;
-		string alpha_str;
-
-		ss >> p.sigma;
-
-		if (p.sigma == "R") {
-			ss >> p.a >> p.d >> alpha_str >> sink;
-			float result;
-
-			float operand1, operand2;
-			char operation;
-			size_t operator_loc;
-
-			auto set_operands = [&](const char operation) {
-				if (operator_loc != string::npos) {
-					string before = alpha_str.substr(0, operator_loc);
-					string after = alpha_str.substr(operator_loc + 1, alpha_str.length() - operator_loc);
-
-					if (before.find("pi") != string::npos) {
-						operand1 = FW_PI;
-						operand2 = std::stof(after);
-					}
-					else if (after.find("pi") != string::npos) {
-						operand1 = std::stof(before);
-						operand2 = FW_PI;
-					}
-					else {
-						cout << "wtf!!! " << endl;
-					}
-				}
-			};
-			if ((operator_loc = alpha_str.find('*')) != string::npos) {
-				set_operands('*');
-				result = operand1 * operand2;
-			}
-			else if ((operator_loc = alpha_str.find('/')) != string::npos) {
-				set_operands('/');
-				result = operand1 / operand2;
-			}
-			else {
-				result = 0.0f;
-			}
-
-			p.alpha = result;
-			p.theta = -1;
-		} else if (p.sigma == "P") {
-			ss >> p.a >> sink >> p.alpha >> p.theta;
-			p.d = -1;
-		}
-		else {
-			cout << "Invalid joint type: " << p.sigma << endl;
-			continue;
-		}
-		
-		params.push_back(p);
-	}
-	return params;
-}
-
-void Robot::buildKinematicModel(const std::vector<DhParam>& params)
-{
-
 	int link_index = 0;
-	for (const DhParam& p : params) {
-
+	for (const DhParam& link_params : dh_params) {
 		cout << "Parameters for link " << link_index << ":" << endl;
-		cout << "	length: " << p.a << endl;
-		cout << "	twist: " << p.alpha << endl;
-		cout << "	offset: " << p.d << endl;
+		cout << "	length: " << link_params.a << endl;
+		cout << "	twist: " << link_params.alpha << endl;
+		cout << "	offset: " << link_params.d << endl;
 		cout << "	rotation: " << 0 << endl;
 
-		Link l;
-		l.p = p;
-		l.rotation = 0;
-		l.target_rotation = 0;
-		l.joint_speed = 0;
-		links_.push_back(l);
+		JointedLink link(link_params, 0.0f);
+		links_.push_back(link);
 		link_index++;
 	}
 	cout << "Created " << links_.size() << " links" << endl;
@@ -377,22 +291,4 @@ void Robot::buildKinematicModel(const std::vector<DhParam>& params)
 
 	cout << endl << "Manipulator Jacobian when joint angles are zero: " << endl;
 	cout << getJacobian() << endl;
-}
-
-FW::Mat4f Link::eval_link_matrix(float rotationAngle) const
-{
-	// https://www.youtube.com/watch?v=nuB_7BkYNMk
-	Vec3f transl = Vec3f(0, 0, p.d);						// first move up so that we are at the level of the common normal
-	Mat3f rot = Mat3f::rotation(Vec3f(0, 0, 1), rotationAngle);	// then rotate around z to align x with next x
-
-	Mat4f z_screw = combineToMat4f(rot, transl);  // translation and rotation with respect to z
-
-	// after applying the z-screw, we are at the correct level and our x-axis points in the correct direction
-	// now move towards our new x by link length
-	transl = Vec3f(p.a, 0, 0);
-	rot = Mat3f::rotation(Vec3f(1, 0, 0), p.alpha);	// apply link twist (rotate around x-axis)
-
-	Mat4f x_screw = combineToMat4f(rot, transl);	// translation and rotation with respect to x
-
-	return z_screw * x_screw;
 }

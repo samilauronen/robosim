@@ -13,13 +13,13 @@
     <ClCompile Include="src\base\Robot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\base\RobotGraphics.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\base\InverseKinematics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\base\Link.cpp">
+    <ClCompile Include="src\base\JointedLink.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\DhParam.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -33,14 +33,12 @@
     <ClInclude Include="src\base\Robot.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\base\RobotGraphics.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\base\InverseKinematics.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\base\Link.hpp">
+    <ClInclude Include="src\base\JointedLink.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\base\DhParam.hpp" />
   </ItemGroup>
 </Project>

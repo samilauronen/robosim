@@ -5,7 +5,6 @@
 #include "gpu/GLContext.hpp"
 #include "gpu/Buffer.hpp"
 #include "Utility.hpp"
-#include "RobotGraphics.hpp"
 
 #include <array>
 #include <cassert>
@@ -296,8 +295,6 @@ void App::render() {
 	P.setCol(3, Vec4f(0, 0, -2*fFar*fNear/(fFar-fNear), 0));
 	Mat4f world_to_clip = P * C;
 
-	vector<Link> robot_links = rob_->getLinks();
-
 	if (drawmode_ == MODE_SKELETON) {
 		// Draw the skeleton as a set of joint positions, connecting lines,
 		// and local coordinate systems at each joint.
@@ -313,6 +310,14 @@ void App::render() {
 		glMatrixMode(GL_MODELVIEW);
 		glLoadMatrixf(&C(0,0));
 
+		glEnable(GL_POINT_SMOOTH);
+		glPointSize(15);
+
+		// draw world origin frame:
+		glLineWidth(2);
+		float scale = 0.3;
+		drawFrame(Mat4f{}, scale);
+
 		// draw ray from camera
 		glLineWidth(2);
 		glBegin(GL_LINES);
@@ -326,7 +331,7 @@ void App::render() {
 		glVertex3f(ray_end_.x, ray_end_.y, ray_end_.z);
 		glEnd();
 
-		RobotGraphics::renderSkeleton(robot_links, rob_->getWorldToBase());
+		rob_->renderSkeleton();
 	}
 	else // mesh mode
 	{
@@ -334,7 +339,7 @@ void App::render() {
 			glPolygonMode(GL_FRONT, GL_LINE);
 			glPolygonMode(GL_BACK, GL_LINE);
 		}
-		std::vector<Vertex> vertices = RobotGraphics::getMeshVertices(robot_links, rob_->getWorldToBase());
+		std::vector<Vertex> vertices = rob_->getMeshVertices();
 
 		float square_size = 0.2;
 		float grid_size = 50;
