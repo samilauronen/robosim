@@ -236,9 +236,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\base\App.cpp" />
+    <ClCompile Include="src\base\meshes\BoxMesh.cpp" />
+    <ClCompile Include="src\base\meshes\CylinderMesh.cpp" />
     <ClCompile Include="src\base\DhParam.cpp" />
     <ClCompile Include="src\base\InverseKinematics.cpp" />
     <ClCompile Include="src\base\JointedLink.cpp" />
+    <ClCompile Include="src\base\meshes\JointedLinkMesh.cpp" />
+    <ClCompile Include="src\base\meshes\Mesh.cpp" />
     <ClCompile Include="src\base\Robot.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -246,6 +250,10 @@
     <ClInclude Include="src\base\DhParam.hpp" />
     <ClInclude Include="src\base\InverseKinematics.hpp" />
     <ClInclude Include="src\base\JointedLink.hpp" />
+    <ClInclude Include="src\base\meshes\BoxMesh.hpp" />
+    <ClInclude Include="src\base\meshes\CylinderMesh.hpp" />
+    <ClInclude Include="src\base\meshes\JointedLinkMesh.hpp" />
+    <ClInclude Include="src\base\meshes\Mesh.hpp" />
     <ClInclude Include="src\base\Robot.hpp" />
     <ClInclude Include="src\base\Utility.hpp" />
   </ItemGroup>

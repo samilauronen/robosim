@@ -12,15 +12,15 @@ class Robot {
 public:
 	Robot(std::string dh_param_filename, FW::Vec3f location);
 
-	// used to update robot angles over some time difference dt
+	// used to update joint angles over some time difference dt
 	void					update(float dt);
 
 	// kinematics stuff
 	FW::Vec3f				getTcpWorldPosition() const;
-	FW::Vec3f				getTcpWorldPosition(Eigen::VectorXf jointAngles) const; // overload used by iterative inverse kinematics solutions
+	FW::Vec3f				getTcpWorldPosition(Eigen::VectorXf jointAngles) const;
 	Eigen::VectorXf			getTcpSpeed() const;
 	Eigen::MatrixXf			getJacobian() const;
-	Eigen::MatrixXf			getJacobian(Eigen::VectorXf jointAngles) const;	// overload used by iterative inverse kinematics solutions
+	Eigen::MatrixXf			getJacobian(Eigen::VectorXf jointAngles) const;
 	Eigen::VectorXf			getJointSpeeds() const;
 
 	// ik targets are always wrt world frame
@@ -38,10 +38,6 @@ public:
 	void					setJointTargetAngles(Eigen::VectorXf angles);
 	void					setJointTargetAngle(unsigned index, float angle);
 
-	// getters used by graphics interface
-	std::vector<FW::Mat4f>		getToWorldTransforms() const;
-	std::vector<JointedLink>	getLinks() const;
-
 	void					renderSkeleton() const;
 	std::vector<Vertex>		getMeshVertices() const;
 
@@ -51,8 +47,7 @@ public:
 private:
 	FW::Mat4f worldToBase_;
 
-	void					updateToWorldTransforms();
-	void					buildKinematicModel(const std::vector<DhParam>& params);
+	void					createLinks(const std::vector<DhParam>& params);
 
 	const float JOINT_POSITIONAL_ACCURACY = 0.001f;
 

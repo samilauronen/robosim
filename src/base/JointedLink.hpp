@@ -1,55 +1,24 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include "base/Math.hpp"
 #include "DhParam.hpp"
-
-// TODO: move this to some file like "GraphicsPrimitives" or something
-// or actually, maybe not neede at all once we have gluCylinders and somesuch in use
-struct Vertex
-{
-	FW::Vec3f position;
-	FW::Vec3f normal;
-	FW::Vec3f color;
-};
-
-// box-shaped mesh representing a link between joints
-class LinkMesh {
-public:
-	LinkMesh(float thickness, float length) { thickness_ = thickness; length_ = length; };
-
-	std::vector<Vertex> getVertices();
-private:
-	float thickness_;
-	float length_;
-};
-
-// cylinder mesh representing a rotational joint
-class JointMesh {
-public:
-	JointMesh(float radius, float depth) { radius_ = radius; depth_ = depth; };
-
-	std::vector<Vertex> getVertices();
-private:
-	std::pair<std::vector<Vertex>, std::vector<Vertex>> makeFace(int numRingVerts, float z);
-
-	float radius_;
-	float depth_;
-};
+#include "meshes/JointedLinkMesh.hpp"
 
 // describes a combination of a joint and a link
 class JointedLink {
 public:
-	JointedLink(DhParam params, float joint_rotation);
+	JointedLink(DhParam params, float joint_rotation, int link_number);
+
+	// updates rotation based on current joint speed and time passed since last update
+	// also updates the link matrix and mesh position
+	void update(float dt_millis, FW::Mat4f current_world_transform);
 
 	// used to evaluate the link matrix for any joint angle state
-	// does not modify current state of the struct
-	// used by iterative inverse kinematics solvers
+	// useful for iterative inverse kinematics solvers
 	FW::Mat4f evalLinkMatrix(float rotationAngle) const;
-
-	// evalueates link matrix at rotation angle and sets current link matrix to be that
-	void updateLinkMatrix(float rotationAngle);
 
 	// setters
 	void setToWorld(FW::Mat4f to_world) { to_world_ = to_world; };
@@ -67,15 +36,19 @@ public:
 	DhParam getDhParams() const { return params_; };
 	FW::Mat4f getLinkMatrix() const { return link_matrix_; };
 
-	// graphics:
-	static const FW::Vec3f JOINT_COLOR;
-	static const FW::Vec3f LINK_COLOR;
-
 	// returns the vertices of the mesh that represents the combination of a joint and a link
-	std::vector<Vertex> getMeshVertices(int i) const;
+	std::vector<Vertex> getMeshVertices() const;
 	void renderSkeleton() const;
+
 private:
+	void updateLinkMatrix(float rotationAngle);
+	void updateMesh();
+
 	DhParam params_;		// DH parameters of this link
+
+	int link_number_;		// the ordinal number of this link in the robot arm's link chain, starting from base
+
+	JointedLinkMesh mesh_;		// mesh used for graphical representation
 
 	float joint_speed_;     // current speed of the joint in rad/s
 	float rotation_;		// rotation angle of the joint moving this link
@@ -87,5 +60,6 @@ private:
 
 	// transforms the coordinates of this link frame to world frame
 	// created by multiplying together all link matrices of the previous links and the current link
+	// needs to be set by the Robot class
 	FW::Mat4f to_world_;
 };

@@ -14,6 +14,7 @@ using namespace std;
 * Convert all maths to using eigen
 * Unify naming conventions, camelCase vs snake_case
 * Use GLU for the meshes (should be included with OpenGL, if not, download it. It's different from GLUT which is not recommended anymore)
+* ^ actually, glu might suck for joint meshes, but I could still compare it's results to mine and see if my shading is off. And gluSphere could be used for things that don't appear too many times.
 * Use GLFW or some other window manager
 * Think about the naming convention of matrices: to vs from as left or right multiply
 * Use ImGui for UI
@@ -36,13 +37,13 @@ using namespace std;
 */
 Robot::Robot(std::string dh_param_filename, FW::Vec3f location)
 {
-	// set the transformation from world to base, whicj includes rotation to turn z-axis upwards
+	// set the transformation from world to base, which includes rotation to turn z-axis upwards
 	// and the robots location in the world
 	worldToBase_ = combineToMat4f(Mat3f::rotation(Vec3f(1, 0, 0), -FW_PI / 2), location);
 
 	// create kinematic model and links of the robot
 	vector<DhParam> params = loadDhParamsFromFile(dh_param_filename);
-	buildKinematicModel(params);
+	this->createLinks(params);
 }
 
 void Robot::update(float dt_millis)
@@ -50,24 +51,35 @@ void Robot::update(float dt_millis)
 	// in rad/s
 	const float JOINT_SPEED = FW_PI / 3;
 
-	for (int i = 0; i < links_.size(); i++) {
-		float target = getTargetJointAngle(i);
-		float current = getJointAngle(i);
+	// chain the link transformations like so:
+	// for link 0 the result should be W_T_0 (which is W_T_B * B_T_0)
+	// for link 1: W_T_1
+	// for link 2: W_T_2
+	// etc...
+	// index always tells which frame is the result of the transformation
+	Mat4f current_to_world = worldToBase_;
+
+	for (JointedLink& link : links_) {
+		float target = link.getJointTargetRotation();
+		float current = link.getJointRotation();
 
 		float diff = current - target;
 
+		// determintes whether joint should move
+		// TODO: create a joint controller class for doing this?
+		// or maybe move this inside the JointedLink class
 		if (FW::abs(diff) > JOINT_POSITIONAL_ACCURACY) {
-			links_[i].setJointSpeed(current < target ? JOINT_SPEED : -JOINT_SPEED);
-			// maybe call joint.update here?
-			links_[i].setJointRotation(links_[i].getJointRotation() + links_[i].getJointSpeed() * (dt_millis / 1000));
+			link.setJointSpeed(current < target ? JOINT_SPEED : -JOINT_SPEED);
+		} else {
+			link.setJointSpeed(0);
 		}
-		else {
-			links_[i].setJointSpeed(0);
-		}
+
+		link.update(dt_millis, current_to_world);
+		current_to_world *= link.getLinkMatrix();
 	}
-	updateToWorldTransforms();
 }
 
+// TCP position for current joint angles
 FW::Vec3f Robot::getTcpWorldPosition() const
 {
 	return links_[links_.size() - 1].getToWorld() * Vec3f(0, 0, 0);
@@ -84,9 +96,7 @@ FW::Vec3f Robot::getTcpWorldPosition(Eigen::VectorXf jointAngles) const
 
 Eigen::VectorXf Robot::getTcpSpeed() const
 {
-	Eigen::MatrixXf jacobian = getJacobian();
-	Eigen::VectorXf joint_speeds = getJointSpeeds();
-	return jacobian * joint_speeds;
+	return getJacobian() * getJointSpeeds();
 }
 
 void Robot::setTargetTcpPosition(FW::Vec3f new_target_wrt_world)
@@ -171,9 +181,9 @@ Eigen::MatrixXf Robot::getJacobian(Eigen::VectorXf jointAngles) const {
 	return jacobian;
 }
 
+// jacobian for current joint angles
 Eigen::MatrixXf Robot::getJacobian() const
 {
-	// jacobian for current joint angles
 	return getJacobian(getJointAngles());
 }
 
@@ -216,35 +226,6 @@ void Robot::setJointTargetAngle(unsigned index, float angle)
 	links_[index].setJointTargetRotation(angle);
 }
 
-void Robot::updateToWorldTransforms()
-{
-	Vec3f translation;
-	Mat3f rotation;
-
-	// TODO: this may not be necessary, if i make the joint update it's link matrix on its own every time an update cycle happens
-	// first update the link matrix, since rotation may have changed
-	for (int i = 0; i < links_.size(); i++) {
-		links_[i].updateLinkMatrix(links_[i].getJointRotation());
-	}
-
-	// now chain the link transformations like so:
-	// for link 0 the result should be W_T_0 (which is W_T_B * B_T_0)
-	// for link 1: W_T_1
-	// for link 2: W_T_2
-	// etc...
-	// index always tells which frame is the result of the transformation
-	Mat4f current_transform = worldToBase_;
-	for (int i = 0; i < links_.size(); i++) {
-		current_transform *= links_[i].getLinkMatrix();
-		links_[i].setToWorld(current_transform);
-	}
-}
-
-std::vector<JointedLink> Robot::getLinks() const
-{
-	return links_;
-}
-
 void Robot::renderSkeleton() const
 {
 	for (const JointedLink& link : links_) {
@@ -254,24 +235,15 @@ void Robot::renderSkeleton() const
 
 std::vector<Vertex> Robot::getMeshVertices() const
 {
-	std::vector<Vertex> allVerts;
+	std::vector<Vertex> all_vertices;
 	for (int i = 0; i < links_.size(); i++) {
-		std::vector<Vertex> linkVertices = links_[i].getMeshVertices(i);
-		allVerts.insert(allVerts.end(), linkVertices.begin(), linkVertices.end());
+		std::vector<Vertex> link_vertices = links_[i].getMeshVertices();
+		all_vertices.insert(all_vertices.end(), link_vertices.begin(), link_vertices.end());
 	}
-	return allVerts;
+	return all_vertices;
 }
 
-std::vector<FW::Mat4f> Robot::getToWorldTransforms() const
-{
-	vector<Mat4f> transforms;
-	for (int i = 0; i < links_.size(); i++) {
-		transforms.push_back(links_[i].getToWorld());
-	}
-	return transforms;
-}
-
-void Robot::buildKinematicModel(const std::vector<DhParam>& dh_params)
+void Robot::createLinks(const std::vector<DhParam>& dh_params)
 {
 	int link_index = 0;
 	for (const DhParam& link_params : dh_params) {
@@ -281,14 +253,11 @@ void Robot::buildKinematicModel(const std::vector<DhParam>& dh_params)
 		cout << "	offset: " << link_params.d << endl;
 		cout << "	rotation: " << 0 << endl;
 
-		JointedLink link(link_params, 0.0f);
+		JointedLink link(link_params, 0.0f, link_index);
 		links_.push_back(link);
 		link_index++;
 	}
-	cout << "Created " << links_.size() << " links" << endl;
-
-	updateToWorldTransforms();
-
-	cout << endl << "Manipulator Jacobian when joint angles are zero: " << endl;
+	cout << "Created " << links_.size() << " links" << endl << endl;
+	cout << "Manipulator Jacobian when joint angles are zero: " << endl;
 	cout << getJacobian() << endl;
 }

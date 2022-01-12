@@ -22,6 +22,18 @@
     <ClCompile Include="src\base\DhParam.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\base\meshes\CylinderMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\meshes\BoxMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\meshes\Mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\meshes\JointedLinkMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\base\App.hpp">
@@ -40,5 +52,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="src\base\DhParam.hpp" />
+    <ClInclude Include="src\base\meshes\CylinderMesh.hpp" />
+    <ClInclude Include="src\base\meshes\BoxMesh.hpp" />
+    <ClInclude Include="src\base\meshes\Mesh.hpp" />
+    <ClInclude Include="src\base\meshes\JointedLinkMesh.hpp" />
   </ItemGroup>
 </Project>
