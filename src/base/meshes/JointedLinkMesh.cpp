@@ -3,10 +3,14 @@
 #include "BoxMesh.hpp"
 #include "../utility.hpp"
 
-const FW::Vec3f JointedLinkMesh::JOINT_COLOR = FW::Vec3f(0.05, 0.6, 0.4);
-const FW::Vec3f JointedLinkMesh::LINK_COLOR = FW::Vec3f(0.9, 0.5, 0);
+using namespace Eigen;
 
-JointedLinkMesh::JointedLinkMesh(float z_len, float x_len, int link_number)
+const Vector3f JointedLinkMesh::JOINT_COLOR = Vector3f(0.05, 0.6, 0.4);
+const Vector3f JointedLinkMesh::LINK_COLOR = Vector3f(0.9, 0.5, 0);
+
+
+JointedLinkMesh::JointedLinkMesh(float z_len, float x_len, int link_number):
+	Mesh()
 {
 	float init_link_thickness = 0.1f;
 	float init_joint_radius = 0.07f;
@@ -22,8 +26,8 @@ JointedLinkMesh::JointedLinkMesh(float z_len, float x_len, int link_number)
 	bool both_directions = z_len > 0.01 && x_len > 0.01;
 
 	// positions where the different link ends are
-	Vec3f x_link_end = Vec3f(x_len, 0, z_len);
-	Vec3f z_link_end = Vec3f(0, 0, z_len);
+	Vector3f x_link_end = Vector3f(x_len, 0, z_len);
+	Vector3f z_link_end = Vector3f(0, 0, z_len);
 
 	// if both links exist, make small adjustment to lengths so that they "interlock" nicely with eachother
 	if (both_directions) {
@@ -39,15 +43,15 @@ JointedLinkMesh::JointedLinkMesh(float z_len, float x_len, int link_number)
 	CylinderMesh joint(radius, length, JOINT_COLOR);
 
 	// move x_link to its correct position
-	Vec3f i, j, k;
-	Mat3f link_orientation;
+	Vector3f i, j, k;
+	Matrix3f link_orientation;
 	k = (z_link_end - x_link_end).normalized();
-	j = Vec3f(0, 1, 0);
+	j = Vector3f(0, 1, 0);
 	i = j.cross(k);
-	link_orientation.setCol(0, i);
-	link_orientation.setCol(1, j);
-	link_orientation.setCol(2, k);
-	x_link.transform(combineToMat4f(link_orientation, x_link_end));
+	link_orientation.col(0) = i;
+	link_orientation.col(1) = j;
+	link_orientation.col(2) = k;
+	x_link.transform(Translation3f(x_link_end) * link_orientation);
 
 	// compose all mesh vertices into one vector
 	std::vector<Vertex> z_verts, x_verts, joint_verts;

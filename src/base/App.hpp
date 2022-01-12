@@ -5,10 +5,10 @@
 #include "gui/Window.hpp"
 #include "gui/CommonControls.hpp"
 #include "3d/CameraControls.hpp"
+#include "Eigen/Dense"
 
 #include <vector>
 #include <memory>
-
 
 namespace FW {
 
@@ -61,8 +61,8 @@ private:
 	DrawMode			drawmode_;
 	bool				shading_toggle_;
 	bool				shading_mode_changed_;
-	std::vector<Vec3f>	joint_colors_;
 	std::vector<float>  joint_angle_controls_;
+	std::vector<float>	prev_controls_;
 
 	uint64_t time_end_;
 	float temp = 0;
@@ -72,7 +72,7 @@ private:
 
 	FW::Vec3f ray_start_, ray_end_;
 
-	std::unique_ptr<Robot>	rob_;
+	std::unique_ptr<Robot> rob_;
 };
 
 } // namespace FW

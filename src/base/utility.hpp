@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../framework/base/Math.hpp"
+#include "Eigen/Dense"
 
 #include <iostream>
 #include <chrono>
@@ -41,27 +42,40 @@ inline uint64_t currentTimeMicros() {
 }
 
 // TODO: could be moved to a GraphicsUtils file?
-inline void drawFrame(FW::Mat4f world_to_frame, float scale) {
-	FW::Vec3f origin = world_to_frame * FW::Vec3f(0, 0, 0);
-	FW::Mat3f orientation = world_to_frame.getXYZ();
-
-	FW::Vec3f i = orientation.getCol(0) * scale;
-	FW::Vec3f j = orientation.getCol(1) * scale;
-	FW::Vec3f k = orientation.getCol(2) * scale;
+inline void drawFrame(Eigen::Affine3f world_to_frame, float scale) {
+	Eigen::Vector3f origin = world_to_frame.translation();
+	Eigen::Matrix3f orientation = world_to_frame.rotation();
+	Eigen::Vector3f i, j, k;
+	i = orientation.col(0) * scale;
+	j = orientation.col(1) * scale;
+	k = orientation.col(2) * scale;
 
 	glBegin(GL_LINES);
 	glColor3f(1, 0, 0);
-	glVertex3f(origin.x, origin.y, origin.z);
-	glVertex3f(origin.x + i.x, origin.y + i.y, origin.z + i.z);
+	glVertex3f(origin.x(), origin.y(), origin.z());
+	glVertex3f(origin.x() + i.x(), origin.y() + i.y(), origin.z() + i.z());
 	glColor3f(0, 1, 0); // green
-	glVertex3f(origin.x, origin.y, origin.z);
-	glVertex3f(origin.x + j.x, origin.y + j.y, origin.z + j.z);
+	glVertex3f(origin.x(), origin.y(), origin.z());
+	glVertex3f(origin.x()+ j.x(), origin.y() + j.y(), origin.z() + j.z());
 	glColor3f(0, 0, 1); // blue
-	glVertex3f(origin.x, origin.y, origin.z);
-	glVertex3f(origin.x + k.x, origin.y + k.y, origin.z + k.z);
+	glVertex3f(origin.x(), origin.y(), origin.z());
+	glVertex3f(origin.x() + k.x(), origin.y()+ k.y(), origin.z() + k.z());
 	glEnd();
 }
 
+inline Eigen::Matrix4f toEigenMatrix(FW::Mat4f input) {
+	Eigen::Matrix4f res;
+	FW::Vec4f row0 = input.getRow(0);
+	FW::Vec4f row1 = input.getRow(1);
+	FW::Vec4f row2 = input.getRow(2);
+	FW::Vec4f row3 = input.getRow(3);
+
+	res << row0.x, row0.y, row0.z, row0.w,
+		row1.x, row1.y, row1.z, row1.w,
+		row2.x, row2.y, row2.z, row2.w,
+		row3.x, row3.y, row3.z, row3.w;
+	return res;
+}
 
 // http://stackoverflow.com/questions/2270726/how-to-determine-the-size-of-an-array-of-strings-in-c
 template <typename T, std::size_t N>

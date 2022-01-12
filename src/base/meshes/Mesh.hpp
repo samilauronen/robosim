@@ -1,22 +1,26 @@
 #pragma once
 #include <vector>
+#define USE_MATH_DEFINES
+#include <math.h>
 
-#include "base/Math.hpp"
+#include "Eigen/Dense"
 
 struct Vertex
 {
-	FW::Vec3f position;
-	FW::Vec3f normal;
-	FW::Vec3f color;
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	Eigen::Vector3f position;
+	Eigen::Vector3f normal;
+	Eigen::Vector3f color;
 };
 
 class Mesh {
 public:
-	void setToWorldTransform(FW::Mat4f t);
-	void transform(FW::Mat4f t);
+	Mesh();
+	void setToWorldTransform(Eigen::Affine3f t);
+	void transform(Eigen::Affine3f t);
 
 	std::vector<Vertex> getVertices() const;
 protected:
 	std::vector<Vertex> vertices_;
-	FW::Mat4f to_world_;
+	Eigen::Affine3f to_world_;
 };

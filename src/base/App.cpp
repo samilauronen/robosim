@@ -19,6 +19,7 @@
 #include <iomanip>
 
 using namespace FW;
+using namespace Eigen;
 using namespace std;
 
 namespace {
@@ -43,16 +44,11 @@ App::App(void)
 	shading_toggle_			(false),
 	shading_mode_changed_	(false)
 {
-	static const Vec3f distinct_colors[6] = {
-		Vec3f(0, 0, 1), Vec3f(0, 1, 0), Vec3f(0, 1, 1),
-		Vec3f(1, 0, 0), Vec3f(1, 0, 1), Vec3f(1, 1, 0)};
-	for (auto i = 0u; i < 100; ++i)
-		joint_colors_.push_back(distinct_colors[i % 6]);
-
-	rob_ = std::make_unique<Robot>("src/base/params.txt", Vec3f(1, 0, 0));
+	rob_ = std::make_unique<Robot>("src/base/params.txt", Vector3f(1, 0, 0));
 
 	// now robot knows how many joints it has, we can create sliders to control them
 	joint_angle_controls_.resize(rob_->getNumJoints());
+	prev_controls_.resize(rob_->getNumJoints());
 
 	initRendering();
 		
@@ -131,9 +127,8 @@ bool App::handleEvent(const Window::Event& ev) {
 			ray_start_ = position;
 			ray_end_ = position + ray_vec * t;
 
-			rob_->setTargetTcpPosition(ray_end_);
+			rob_->setTargetTcpPosition(Vector3f(ray_end_.x, ray_end_.y, ray_end_.z));
 		}
-			
 	}
 
 	if (ev.type == Window::EventType_KeyDown) {
@@ -150,7 +145,12 @@ bool App::handleEvent(const Window::Event& ev) {
 
 	// set robot joint rotations to slider values
 	for (int i = 0; i < joint_angle_controls_.size(); i++) {
-		rob_->setJointTargetAngle(i, joint_angle_controls_[i]);
+		float curr = joint_angle_controls_[i];
+		float prev = prev_controls_[i];
+		if (abs(curr - prev) > 0.0001) {
+			rob_->setJointTargetAngle(i, joint_angle_controls_[i]);
+			prev_controls_[i] = curr;
+		}
 	}
 
 	camera_ctrl_.handleEvent(ev);
@@ -178,9 +178,12 @@ void App::initRendering()
 	glGenVertexArrays(1, &gl_.point_vao);
 	glBindVertexArray(gl_.point_vao);
 	glEnableVertexAttribArray(ATTRIB_POSITION);
-	glVertexAttribPointer(ATTRIB_POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Vec3f), (GLvoid*)0);
+	glVertexAttribPointer(ATTRIB_POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Eigen::Vector3f), (GLvoid*)0);
 	glBindVertexArray(0);
 	
+	// Check for OpenGL errors.
+	GLContext::checkErrors();
+
 	// Set up vertex attribute object for doing SSD on the CPU. The data will be loaded and re-loaded later, on each frame.
 	glBindVertexArray(gl_.simple_vao);
 	glBindBuffer(GL_ARRAY_BUFFER, gl_.simple_vertex_buffer);
@@ -295,6 +298,8 @@ void App::render() {
 	P.setCol(3, Vec4f(0, 0, -2*fFar*fNear/(fFar-fNear), 0));
 	Mat4f world_to_clip = P * C;
 
+	Eigen::Matrix4f EP = toEigenMatrix(P);
+
 	if (drawmode_ == MODE_SKELETON) {
 		// Draw the skeleton as a set of joint positions, connecting lines,
 		// and local coordinate systems at each joint.
@@ -306,7 +311,7 @@ void App::render() {
 		// for debugging.
 		glUseProgram(0);
 		glMatrixMode(GL_PROJECTION);
-		glLoadMatrixf(&P(0,0));
+		glLoadMatrixf(EP.data());
 		glMatrixMode(GL_MODELVIEW);
 		glLoadMatrixf(&C(0,0));
 
@@ -316,7 +321,7 @@ void App::render() {
 		// draw world origin frame:
 		glLineWidth(2);
 		float scale = 0.3;
-		drawFrame(Mat4f{}, scale);
+		drawFrame(Eigen::Affine3f::Identity(), scale);
 
 		// draw ray from camera
 		glLineWidth(2);
@@ -348,30 +353,30 @@ void App::render() {
 
 		for (int i = 0; i < grid_size; i++) {
 			for (int j = 0; j < grid_size; j++) {
-				Vec3f color = (i + j) % 2 == 0 ? Vec3f(0.8, 0.8, 0.8) : Vec3f(0.3, 0.3, 0.3);
+				Vector3f color = (i + j) % 2 == 0 ? Vector3f(0.8, 0.8, 0.8) : Vector3f(0.3, 0.3, 0.3);
 
 				// left triangle
 				Vertex p1, p2, p3;
-				p1.position = Vec3f(i * square_size, 0, j * square_size);
-				p2.position = Vec3f(i * square_size, 0, (j + 1) * square_size);
-				p3.position = Vec3f((i + 1) * square_size, 0, j * square_size);
+				p1.position = Vector3f(i * square_size, 0, j * square_size);
+				p2.position = Vector3f(i * square_size, 0, (j + 1) * square_size);
+				p3.position = Vector3f((i + 1) * square_size, 0, j * square_size);
 
-				p1.normal = p2.normal = p3.normal = Vec3f(0, 1, 0);
+				p1.normal = p2.normal = p3.normal = Vector3f(0, 1, 0);
 				p1.color = p2.color = p3.color = color;
 				planeVerts.insert(planeVerts.end(), { p1,p2,p3 });
 
 				// right triangle
-				p1.position = Vec3f(i * square_size, 0, (j + 1) * square_size);
-				p2.position = Vec3f((i + 1) * square_size, 0, (j + 1) * square_size);
-				p3.position = Vec3f((i + 1) * square_size, 0, j * square_size);
+				p1.position = Vector3f(i * square_size, 0, (j + 1) * square_size);
+				p2.position = Vector3f((i + 1) * square_size, 0, (j + 1) * square_size);
+				p3.position = Vector3f((i + 1) * square_size, 0, j * square_size);
 
-				p1.normal = p2.normal = p3.normal = Vec3f(0, 1, 0);
+				p1.normal = p2.normal = p3.normal = Vector3f(0, 1, 0);
 				p1.color = p2.color = p3.color = color;
 				planeVerts.insert(planeVerts.end(), { p1,p2,p3 });
 			}
 		}
 		for (Vertex& v : planeVerts) {
-			v.position -= Vec3f(grid_size*square_size / 2, 0, grid_size*square_size / 2);
+			v.position -= Vector3f(grid_size*square_size / 2, 0, grid_size*square_size / 2);
 		}
 		vertices.insert(vertices.end(), planeVerts.begin(), planeVerts.end());
 
@@ -429,10 +434,10 @@ void App::render() {
 	
 	// Show status messages.
 	std::stringstream ss;
-	Vec3f tcp = rob_->getTcpWorldPosition();
+	Vector3f tcp = rob_->getTcpWorldPosition();
 	Eigen::VectorXf speeds = rob_->getJointSpeeds();
 	Eigen::VectorXf tcpSpeed = rob_->getTcpSpeed();
-	ss << "TCP world position: ("  << tcp.x << ", " << tcp.y << ", " << tcp.z << ")" << endl;
+	ss << "TCP world position: ("  << tcp.x() << ", " << tcp.y() << ", " << tcp.z() << ")" << endl;
 	ss << "Joint speeds: " << speeds(0)  << ", " << speeds(1) << endl;
 	ss << "TCP speed: " << tcpSpeed(0) << ", " << tcpSpeed(1) << ", " << tcpSpeed(2) << " Angular: " << tcpSpeed(3) << ", " << tcpSpeed(4) << ", " << tcpSpeed(5) << endl;
 	ss << endl;

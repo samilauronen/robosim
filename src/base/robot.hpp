@@ -1,5 +1,4 @@
 #pragma once
-#include <base/Math.hpp>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -10,23 +9,24 @@
 
 class Robot {
 public:
-	Robot(std::string dh_param_filename, FW::Vec3f location);
+	Robot(std::string dh_param_filename, Eigen::Vector3f location);
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 	// used to update joint angles over some time difference dt
 	void					update(float dt);
 
 	// kinematics stuff
-	FW::Vec3f				getTcpWorldPosition() const;
-	FW::Vec3f				getTcpWorldPosition(Eigen::VectorXf jointAngles) const;
+	Eigen::Vector3f			getTcpWorldPosition() const;
+	Eigen::Vector3f			getTcpWorldPosition(Eigen::VectorXf jointAngles) const;
 	Eigen::VectorXf			getTcpSpeed() const;
 	Eigen::MatrixXf			getJacobian() const;
 	Eigen::MatrixXf			getJacobian(Eigen::VectorXf jointAngles) const;
 	Eigen::VectorXf			getJointSpeeds() const;
 
 	// ik targets are always wrt world frame
-	FW::Vec3f				getTargetTcpPosition() const { return ik_target_; };
-	void					setTargetTcpPosition(FW::Vec3f new_target_wrt_world);
-	Eigen::VectorXf			solveInverseKinematics(FW::Vec3f tcp_pos) const;
+	Eigen::Vector3f			getTargetTcpPosition() const { return ik_target_; };
+	void					setTargetTcpPosition(Eigen::Vector3f new_target_wrt_world);
+	Eigen::VectorXf			solveInverseKinematics(Eigen::Vector3f tcp_pos) const;
 
 	// joint angle getters
 	Eigen::VectorXf			getJointAngles() const;
@@ -42,16 +42,14 @@ public:
 	std::vector<Vertex>		getMeshVertices() const;
 
 	size_t					getNumJoints() const { return links_.size(); };
-	FW::Mat4f				getWorldToBase() const { return worldToBase_; };
+	Eigen::Affine3f			getWorldToBase() const { return worldToBase_; };
 
 private:
-	FW::Mat4f worldToBase_;
+	Eigen::Affine3f	worldToBase_;
 
 	void					createLinks(const std::vector<DhParam>& params);
 
-	const float JOINT_POSITIONAL_ACCURACY = 0.001f;
-
 	std::vector<JointedLink> links_;
-	FW::Vec3f ik_target_;
+	Eigen::Vector3f ik_target_;
 };
 

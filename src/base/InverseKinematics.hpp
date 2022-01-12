@@ -1,13 +1,12 @@
 #include <array>
 
 #include "Eigen/Dense"
-#include "base/Math.hpp"
 #include "Robot.hpp"
 #include "utility.hpp"
 
 // TODO: Add numerical IK solvers based on the paper recommendations
 // http://math.ucsd.edu/~sbuss/ResearchWeb/ikmethods/iksurvey.pdf
-// Especially Jacobian Transpose is said to be easy to implments, fast and accurate. Try that.
+// Especially Jacobian Transpose is said to be easy to implment, fast and accurate. Try that.
 
 // namespace contains different IK solver functions for use with the robot
 namespace IK {
@@ -27,7 +26,7 @@ struct IKSolution {
 // The first IK solver, not particularly fast or accurate, but gets the job done
 class SimpleIKSolver {
 public:
-	static IKSolution solve(const Robot& robot, const FW::Vec3f& tcp_target_wrt_world); 
+	static IKSolution solve(const Robot& robot, const Eigen::Vector3f& tcp_target_wrt_world); 
 };
 
 } // namespace IK

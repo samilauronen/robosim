@@ -2,32 +2,34 @@
 
 namespace IK {
 
-IKSolution SimpleIKSolver::solve(const Robot& robot, const FW::Vec3f& tcp_target_wrt_world) {
-	using namespace FW;
-	Mat4f base_to_world = robot.getWorldToBase().inverted();
-	Vec3f target_wrt_base = base_to_world * tcp_target_wrt_world;
+
+using namespace Eigen;
+
+IKSolution SimpleIKSolver::solve(const Robot& robot, const Vector3f& tcp_target_wrt_world) {
+	Affine3f base_to_world = robot.getWorldToBase().inverse();
+	Vector3f target_wrt_base = base_to_world * tcp_target_wrt_world;
 
 	// updated every iteration
 	Eigen::VectorXf solutionJointAngles = robot.getJointAngles();
 
 	// current position and it's difference from target
-	Vec3f current_wrt_base = base_to_world * robot.getTcpWorldPosition();
-	Vec3f delta_p = target_wrt_base - current_wrt_base;
+	Vector3f current_wrt_base = base_to_world * robot.getTcpWorldPosition();
+	Vector3f delta_p = target_wrt_base - current_wrt_base;
 
 	uint64_t start_time = currentTimeMicros();
 
 	// still too far away and have time?
-	while (delta_p.length() > DISTANCE_THRESHOLD && (currentTimeMicros() - start_time) < TIMEOUT_MICROS) {
+	while (delta_p.norm() > DISTANCE_THRESHOLD && (currentTimeMicros() - start_time) < TIMEOUT_MICROS) {
 		// difference vec from target position
-		Eigen::Vector<float, 6> dp;
-		dp << delta_p.x, delta_p.y, delta_p.z, 0, 0, 0;
+		Vector<float, 6> dp;
+		dp << delta_p.x(), delta_p.y(), delta_p.z(), 0, 0, 0;
 
-		Eigen::MatrixXf jacobian = robot.getJacobian(solutionJointAngles);
+		MatrixXf jacobian = robot.getJacobian(solutionJointAngles);
 
 		// equation of form J * d_theta = dp
 		// where J is jacobian, d_theta is difference in joint angles, dp is difference in TCP position
 		// solve for d_theta
-		Eigen::VectorXf delta_theta = jacobian.colPivHouseholderQr().solve(dp);
+		VectorXf delta_theta = jacobian.colPivHouseholderQr().solve(dp);
 
 		// clamp results, no crazy joint angles
 		for (int i = 0; i < delta_theta.rows(); i++) {
