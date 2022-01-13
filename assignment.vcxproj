@@ -93,7 +93,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>lib;src\framework;$(CUDA_INC_PATH);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>lib;src;src\framework;$(CUDA_INC_PATH);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;FW_DO_NOT_OVERRIDE_NEW_DELETE;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);SOLUTION</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -162,7 +162,7 @@
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>lib;src\framework;$(CUDA_INC_PATH);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>lib;src;src\framework;$(CUDA_INC_PATH);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;FW_DO_NOT_OVERRIDE_NEW_DELETE;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);SOLUTION</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
@@ -237,27 +237,27 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\base\App.cpp" />
-    <ClCompile Include="src\base\core\DhParam.cpp" />
-    <ClCompile Include="src\base\core\InverseKinematics.cpp" />
-    <ClCompile Include="src\base\core\JointedLink.cpp" />
-    <ClCompile Include="src\base\core\Robot.cpp" />
-    <ClCompile Include="src\base\meshes\BoxMesh.cpp" />
-    <ClCompile Include="src\base\meshes\CylinderMesh.cpp" />
-    <ClCompile Include="src\base\meshes\JointedLinkMesh.cpp" />
-    <ClCompile Include="src\base\meshes\Mesh.cpp" />
+    <ClCompile Include="src\App.cpp" />
+    <ClCompile Include="src\core\DhParam.cpp" />
+    <ClCompile Include="src\core\InverseKinematics.cpp" />
+    <ClCompile Include="src\core\JointedLink.cpp" />
+    <ClCompile Include="src\core\Robot.cpp" />
+    <ClCompile Include="src\meshes\BoxMesh.cpp" />
+    <ClCompile Include="src\meshes\CylinderMesh.cpp" />
+    <ClCompile Include="src\meshes\JointedLinkMesh.cpp" />
+    <ClCompile Include="src\meshes\Mesh.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\base\App.hpp" />
-    <ClInclude Include="src\base\core\DhParam.hpp" />
-    <ClInclude Include="src\base\core\InverseKinematics.hpp" />
-    <ClInclude Include="src\base\core\JointedLink.hpp" />
-    <ClInclude Include="src\base\core\Robot.hpp" />
-    <ClInclude Include="src\base\core\Utility.hpp" />
-    <ClInclude Include="src\base\meshes\BoxMesh.hpp" />
-    <ClInclude Include="src\base\meshes\CylinderMesh.hpp" />
-    <ClInclude Include="src\base\meshes\JointedLinkMesh.hpp" />
-    <ClInclude Include="src\base\meshes\Mesh.hpp" />
+    <ClInclude Include="src\App.hpp" />
+    <ClInclude Include="src\core\DhParam.hpp" />
+    <ClInclude Include="src\core\InverseKinematics.hpp" />
+    <ClInclude Include="src\core\JointedLink.hpp" />
+    <ClInclude Include="src\core\Robot.hpp" />
+    <ClInclude Include="src\core\Utility.hpp" />
+    <ClInclude Include="src\meshes\BoxMesh.hpp" />
+    <ClInclude Include="src\meshes\CylinderMesh.hpp" />
+    <ClInclude Include="src\meshes\JointedLinkMesh.hpp" />
+    <ClInclude Include="src\meshes\Mesh.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
