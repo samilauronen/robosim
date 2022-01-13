@@ -4,7 +4,7 @@
 #include "base/Main.hpp"
 #include "gpu/GLContext.hpp"
 #include "gpu/Buffer.hpp"
-#include "Utility.hpp"
+#include "core/Utility.hpp"
 
 #include <array>
 #include <cassert>
@@ -44,7 +44,7 @@ App::App(void)
 	shading_toggle_			(false),
 	shading_mode_changed_	(false)
 {
-	rob_ = std::make_unique<Robot>("src/base/params.txt", Vector3f(1, 0, 0));
+	rob_ = std::make_unique<Robot>("src/resources/params.txt", Vector3f(1, 0, 0));
 
 	// now robot knows how many joints it has, we can create sliders to control them
 	joint_angle_controls_.resize(rob_->getNumJoints());

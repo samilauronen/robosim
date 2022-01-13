@@ -19,7 +19,9 @@ using namespace std;
 * ^ actually, glu might suck for joint meshes, but I could still compare it's results to mine and see if my shading is off. And gluSphere could be used for things that don't appear too many times.
 * Use GLFW or some other window manager
 * Think about the naming convention of matrices: to vs from as left or right multiply
+* Make the plane be drawn using shaders for more efficiency
 * Put shader programs in their own files and compile and link them without using FW
+* Simplify jacobian calculation
 * Use ImGui for UI
 * Make your own camera class, or use an existing one (from GLFW?)
 * Make prismatic joints possible?

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Robot.hpp"
+#include "core/Robot.hpp"
 
 #include "gui/Window.hpp"
 #include "gui/CommonControls.hpp"

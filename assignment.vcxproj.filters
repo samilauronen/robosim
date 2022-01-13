@@ -10,18 +10,6 @@
     <ClCompile Include="src\base\App.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\base\Robot.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\base\InverseKinematics.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\base\JointedLink.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\base\DhParam.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\base\meshes\CylinderMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -34,27 +22,31 @@
     <ClCompile Include="src\base\meshes\JointedLinkMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\base\core\DhParam.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\core\InverseKinematics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\core\JointedLink.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\base\core\Robot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\base\App.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\base\Utility.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\base\Robot.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\base\InverseKinematics.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\base\JointedLink.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\base\DhParam.hpp" />
     <ClInclude Include="src\base\meshes\CylinderMesh.hpp" />
     <ClInclude Include="src\base\meshes\BoxMesh.hpp" />
     <ClInclude Include="src\base\meshes\Mesh.hpp" />
     <ClInclude Include="src\base\meshes\JointedLinkMesh.hpp" />
+    <ClInclude Include="src\base\core\DhParam.hpp" />
+    <ClInclude Include="src\base\core\InverseKinematics.hpp" />
+    <ClInclude Include="src\base\core\JointedLink.hpp" />
+    <ClInclude Include="src\base\core\Robot.hpp" />
+    <ClInclude Include="src\base\core\Utility.hpp" />
   </ItemGroup>
 </Project>
