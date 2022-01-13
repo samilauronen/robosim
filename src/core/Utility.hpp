@@ -45,6 +45,11 @@ inline void drawFrame(Eigen::Affine3f world_to_frame, float scale) {
 	glEnd();
 }
 
+inline void checkGlErrors() {
+	GLenum err;
+	while ((err = glGetError()) != GL_NO_ERROR) { std::cerr << err << std::endl; abort(); };
+}
+
 // http://stackoverflow.com/questions/2270726/how-to-determine-the-size-of-an-array-of-strings-in-c
 template <typename T, std::size_t N>
 char (&static_sizeof_array( T(&)[N] ))[N];   // declared, not defined

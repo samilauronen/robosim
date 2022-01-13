@@ -234,11 +234,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\App.cpp" />
+    <ClCompile Include="src\core\App.cpp" />
     <ClCompile Include="src\core\DhParam.cpp" />
     <ClCompile Include="src\core\InverseKinematics.cpp" />
     <ClCompile Include="src\core\JointedLink.cpp" />
     <ClCompile Include="src\core\Robot.cpp" />
+    <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\meshes\BoxMesh.cpp" />
     <ClCompile Include="src\meshes\CylinderMesh.cpp" />
     <ClCompile Include="src\meshes\JointedLinkMesh.cpp" />
@@ -246,7 +247,7 @@
     <ClCompile Include="src\rendering\Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\App.hpp" />
+    <ClInclude Include="src\core\App.hpp" />
     <ClInclude Include="src\core\DhParam.hpp" />
     <ClInclude Include="src\core\InverseKinematics.hpp" />
     <ClInclude Include="src\core\JointedLink.hpp" />
@@ -257,6 +258,11 @@
     <ClInclude Include="src\meshes\JointedLinkMesh.hpp" />
     <ClInclude Include="src\meshes\Mesh.hpp" />
     <ClInclude Include="src\rendering\Camera.hpp" />
+    <ClInclude Include="src\rendering\Shader.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="src\rendering\shaders\simple_shader.vs" />
+    <Text Include="src\rendering\shaders\simple_shader.fs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

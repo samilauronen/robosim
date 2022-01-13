@@ -7,8 +7,8 @@ class Camera
 public:
 	Camera(
 		const Eigen::Vector3f& position,
-		const Eigen::Vector3f& forward,
-		const Eigen::Vector3f& up,
+		const Eigen::Vector3f& forward = Eigen::Vector3f(0.0f, 0.0f, -1.0f),
+		const Eigen::Vector3f& up = Eigen::Vector3f(0.0f, 1.0f, 0.0f),
 		float speed = 100.0f, float mouse_sensitivity = 0.01f
 	);
 
@@ -17,7 +17,8 @@ public:
 
 	Eigen::Vector3f getUp() const { return up_; };
 	Eigen::Vector3f getForward() const { return forward_; };
-	Eigen::Matrix4f getWorldToCamera(void) const;
+	Eigen::Vector3f getPosition() const { return position_; };
+	Eigen::Matrix4f getWorldToCamera() const;
 	Eigen::Matrix4f getCameraToClip() const;
 	Eigen::Matrix4f getWorldToClip() const { return getCameraToClip() * getWorldToCamera(); }
 

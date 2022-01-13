@@ -1,3 +1,6 @@
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #include "Camera.hpp"
 
 using namespace Eigen;
@@ -97,15 +100,17 @@ Eigen::Matrix4f Camera::getCameraToClip() const
 {
     // Camera points towards -z.  0 < near < far.
     // Matrix maps z range [-near, -far] to [-1, 1], after homogeneous division.
-    /*float f = rcp(FW::tan(fov_ * FW_PI / 360.0f));
-    float d = rcp(near_ - far_);
+    float f = tan(fov_ * M_PI / 360.0f);
+    float d = near_ - far_;
+    f = f ? 1 / f : 0;
+    d = d ? 1 / d : 0;
 
     Matrix4f r;
     r.row(0) = Vector4f(f, 0.0f, 0.0f, 0.0f);
     r.row(1) = Vector4f(0.0f, f, 0.0f, 0.0f);
     r.row(2) = Vector4f(0.0f, 0.0f, (near_ + far_) * d, 2.0f * near_ * far_ * d);
     r.row(3) = Vector4f(0.0f, 0.0f, -1.0f, 0.0f);
-    return r;*/
+    return r;
     return Matrix4f{};
 }
 

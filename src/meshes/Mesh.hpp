@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#define USE_MATH_DEFINES
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 #include "Eigen/Dense"
