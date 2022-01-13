@@ -12,7 +12,7 @@ JointedLink::JointedLink(DhParam params, float joint_rotation, int link_number) 
 	target_rotation_(joint_rotation),
 	link_number_(link_number),
 	joint_speed_(0),
-	to_world_(Affine3d::Identity())
+	to_world_(Affine3f::Identity())
 {
 	this->updateLinkMatrix(rotation_);
 }
@@ -70,8 +70,6 @@ Affine3f JointedLink::evalLinkMatrix(float rotationAngle) const
 // uses immediate mode to draw a simple "skeleton" model of the joint-link combination
 void JointedLink::renderSkeleton() const
 {
-	using namespace FW;
-
 	Vector3f current_world_pos, parent_world_pos, after_z_screw;
 	Affine3f parent_transform = to_world_ * link_matrix_.inverse();
 	parent_world_pos = parent_transform.translation();

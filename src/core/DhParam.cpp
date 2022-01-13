@@ -3,7 +3,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include "base/Math.hpp"
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 using namespace std;
 
@@ -38,12 +39,12 @@ std::vector<DhParam> loadDhParamsFromFile(const std::string filename)
 					string after = alpha_str.substr(operator_loc + 1, alpha_str.length() - operator_loc);
 
 					if (before.find("pi") != string::npos) {
-						operand1 = FW_PI;
+						operand1 = M_PI;
 						operand2 = std::stof(after);
 					}
 					else if (after.find("pi") != string::npos) {
 						operand1 = std::stof(before);
-						operand2 = FW_PI;
+						operand2 = M_PI;
 					}
 					else {
 						cout << "wtf!!! " << endl;

@@ -7,33 +7,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\base\App.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\base\meshes\CylinderMesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\base\meshes\BoxMesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\base\meshes\Mesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\base\meshes\JointedLinkMesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\base\core\DhParam.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\base\core\InverseKinematics.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\base\core\JointedLink.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\base\core\Robot.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\App.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -61,20 +34,11 @@
     <ClCompile Include="src\meshes\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\rendering\Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\base\App.hpp">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\base\meshes\CylinderMesh.hpp" />
-    <ClInclude Include="src\base\meshes\BoxMesh.hpp" />
-    <ClInclude Include="src\base\meshes\Mesh.hpp" />
-    <ClInclude Include="src\base\meshes\JointedLinkMesh.hpp" />
-    <ClInclude Include="src\base\core\DhParam.hpp" />
-    <ClInclude Include="src\base\core\InverseKinematics.hpp" />
-    <ClInclude Include="src\base\core\JointedLink.hpp" />
-    <ClInclude Include="src\base\core\Robot.hpp" />
-    <ClInclude Include="src\base\core\Utility.hpp" />
     <ClInclude Include="src\App.hpp" />
     <ClInclude Include="src\core\Utility.hpp" />
     <ClInclude Include="src\core\DhParam.hpp" />
@@ -85,8 +49,6 @@
     <ClInclude Include="src\meshes\CylinderMesh.hpp" />
     <ClInclude Include="src\meshes\JointedLinkMesh.hpp" />
     <ClInclude Include="src\meshes\Mesh.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="src\resources\params.txt" />
+    <ClInclude Include="src\rendering\Camera.hpp" />
   </ItemGroup>
 </Project>

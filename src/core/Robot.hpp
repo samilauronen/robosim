@@ -10,8 +10,7 @@
 class Robot {
 public:
 	Robot(std::string dh_param_filename, Eigen::Vector3f location);
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
+	
 	// used to update joint angles over some time difference dt
 	void					update(float dt);
 

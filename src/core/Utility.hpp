@@ -1,34 +1,16 @@
 #pragma once
 
-#include "../framework/base/Math.hpp"
 #include "Eigen/Dense"
 
 #include <iostream>
 #include <chrono>
 
-template <typename T>
-void printVec3(const T& t) {
-	cout << "(" << t.x << " " << t.y << " " << t.z << ")" << endl;
-}
+// GLEW
+#define GLEW_STATIC
+#include <GL/glew.h>
 
-// Construct a matrix from the columns [a, b, c, d].
-inline FW::Mat4f makeMat4f(const FW::Vec4f& a, const FW::Vec4f& b, const FW::Vec4f& c, const FW::Vec4f& d) {
-	FW::Mat4f A;
-	A.col(0) = a;
-	A.col(1) = b;
-	A.col(2) = c;
-	A.col(3) = d;
-	return A;
-}
-
-inline FW::Mat4f combineToMat4f(const FW::Mat3f& rotation, const FW::Vec3f& translation) {
-	FW::Mat4f result;
-	result.setCol(0, FW::Vec4f(rotation.getCol(0), 0));
-	result.setCol(1, FW::Vec4f(rotation.getCol(1), 0));
-	result.setCol(2, FW::Vec4f(rotation.getCol(2), 0));
-	result.setCol(3, FW::Vec4f(translation, 1));
-	return result;
-}
+// GLFW
+#include <GLFW/glfw3.h>
 
 
 inline uint64_t currentTimeMillis() {
@@ -61,20 +43,6 @@ inline void drawFrame(Eigen::Affine3f world_to_frame, float scale) {
 	glVertex3f(origin.x(), origin.y(), origin.z());
 	glVertex3f(origin.x() + k.x(), origin.y()+ k.y(), origin.z() + k.z());
 	glEnd();
-}
-
-inline Eigen::Matrix4f toEigenMatrix(FW::Mat4f input) {
-	Eigen::Matrix4f res;
-	FW::Vec4f row0 = input.getRow(0);
-	FW::Vec4f row1 = input.getRow(1);
-	FW::Vec4f row2 = input.getRow(2);
-	FW::Vec4f row3 = input.getRow(3);
-
-	res << row0.x, row0.y, row0.z, row0.w,
-		row1.x, row1.y, row1.z, row1.w,
-		row2.x, row2.y, row2.z, row2.w,
-		row3.x, row3.y, row3.z, row3.w;
-	return res;
 }
 
 // http://stackoverflow.com/questions/2270726/how-to-determine-the-size-of-an-array-of-strings-in-c

@@ -1,3 +1,6 @@
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #include "InverseKinematics.hpp"
 
 namespace IK {
@@ -33,8 +36,8 @@ IKSolution SimpleIKSolver::solve(const Robot& robot, const Vector3f& tcp_target_
 
 		// clamp results, no crazy joint angles
 		for (int i = 0; i < delta_theta.rows(); i++) {
-			if (delta_theta(i) > FW_PI / 8) delta_theta(i) = FW_PI / 8;
-			if (delta_theta(i) < -FW_PI / 8) delta_theta(i) = -FW_PI / 8;
+			if (delta_theta(i) > M_PI / 8) delta_theta(i) = M_PI / 8;
+			if (delta_theta(i) < -M_PI / 8) delta_theta(i) = -M_PI / 8;
 		}
 
 		// update solution

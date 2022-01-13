@@ -7,6 +7,13 @@
 #include "DhParam.hpp"
 #include "meshes/JointedLinkMesh.hpp"
 
+// GLEW
+#define GLEW_STATIC
+#include <GL/glew.h>
+
+// GLFW
+#include <GLFW/glfw3.h>
+
 // describes a combination of a joint and a link
 class JointedLink {
 public:
@@ -21,7 +28,7 @@ public:
 	Eigen::Affine3f evalLinkMatrix(float rotationAngle) const;
 
 	// setters
-	void setToWorld(Eigen::Affine3f to_world) { to_world_ = to_world; };
+	void setToWorld(const Eigen::Affine3f& to_world) { to_world_ = to_world; };
 	void setJointRotation(float rotation_angle) { rotation_ = rotation_angle; };
 	void setJointSpeed(float new_speed) { joint_speed_ = new_speed; };
 	void setJointTargetRotation(float target_angle) { target_rotation_ = target_angle; };

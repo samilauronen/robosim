@@ -1,7 +1,6 @@
 #include "JointedLinkMesh.hpp"
 #include "CylinderMesh.hpp"
 #include "BoxMesh.hpp"
-#include "../utility.hpp"
 
 using namespace Eigen;
 
@@ -17,11 +16,10 @@ JointedLinkMesh::JointedLinkMesh(float z_len, float x_len, int link_number):
 	float init_joint_length = 0.2f;
 	float size_reduction_factor = 0.8;
 
-	float reduction = FW::pow(size_reduction_factor, link_number);
+	float reduction = pow(size_reduction_factor, link_number);
 	float radius = init_joint_radius * reduction;
 	float length = init_joint_length * reduction;
 	float thickness = init_link_thickness * reduction;
-	using namespace FW;
 
 	bool both_directions = z_len > 0.01 && x_len > 0.01;
 

@@ -4,10 +4,10 @@
 #include <math.h>
 
 #include "Eigen/Dense"
+#include <Eigen/StdVector>
 
 struct Vertex
 {
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	Eigen::Vector3f position;
 	Eigen::Vector3f normal;
 	Eigen::Vector3f color;

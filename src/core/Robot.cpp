@@ -23,7 +23,6 @@ using namespace std;
 * Put shader programs in their own files and compile and link them without using FW
 * Simplify jacobian calculation
 * Use ImGui for UI
-* Make your own camera class, or use an existing one (from GLFW?)
 * Make prismatic joints possible?
 * Maybe have a toggle for drawing a wireframe-ball around the robot, visualizing it's range
 * inverse jacobians!, for trajectories!
@@ -73,7 +72,7 @@ void Robot::createLinks(const std::vector<DhParam>& dh_params)
 void Robot::update(float dt_millis)
 {
 	// in rad/s
-	const float JOINT_SPEED = FW_PI / 3;
+	const float JOINT_SPEED = M_PI / 3;
 
 	// chain the link transformations like so:
 	// for link 0 the result should be W_T_0 (which is W_T_B * B_T_0)
@@ -93,7 +92,7 @@ void Robot::update(float dt_millis)
 		// determintes whether joint should move
 		// TODO: create a joint controller class for doing this?
 		// or maybe move this inside the JointedLink class
-		if (FW::abs(diff) > JOINT_POSITIONAL_ACCURACY) {
+		if (abs(diff) > JOINT_POSITIONAL_ACCURACY) {
 			link.setJointSpeed(current < target ? JOINT_SPEED : -JOINT_SPEED);
 		} else {
 			link.setJointSpeed(0);
