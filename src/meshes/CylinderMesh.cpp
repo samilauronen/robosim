@@ -5,7 +5,7 @@
 
 using namespace Eigen;
 
-CylinderMesh::CylinderMesh(float radius, float length, Vector3f color):
+CylinderMesh::CylinderMesh(float radius, float length, Vector3f color, int subdivisions):
 	Mesh(),
 	color_(color),
 	radius_(radius),
@@ -13,7 +13,7 @@ CylinderMesh::CylinderMesh(float radius, float length, Vector3f color):
 {
 	vertices_.clear();
 
-	int num_ring_verts = 32;
+	int num_ring_verts = subdivisions;
 
 	// first face to z = -length/2
 	std::vector<Vertex> ring1 = createVertexRing(num_ring_verts, -length_ / 2);
@@ -67,6 +67,7 @@ std::vector<Vertex> CylinderMesh::createFaceTriangles(const std::vector<Vertex>&
 	for (int i = 0; i < ring_vertices.size(); i += 1) {
 		Vertex v1 = ring_vertices[i];
 		Vertex v2 = ring_vertices[(i + 1) % ring_vertices.size()];
+		v1.normal = v2.normal = z < 0 ? Vector3f(0, 0, -1) : Vector3f(0, 0, 1);
 		result.insert(result.end(), { v0, v1, v2 });
 	}
 	return result;

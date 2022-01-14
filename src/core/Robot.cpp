@@ -15,12 +15,9 @@ using namespace std;
 * Unify naming conventions, camelCase vs snake_case
 * Do something with constants, maybe separate file? At least place them so that they make sense
 * Make the BoxMesh normals correct by duplicating vertices
-* Use GLU for the meshes (should be included with OpenGL, if not, download it. It's different from GLUT which is not recommended anymore)
-* ^ actually, glu might suck for joint meshes, but I could still compare it's results to mine and see if my shading is off. And gluSphere could be used for things that don't appear too many times.
-* Use GLFW or some other window manager
 * Think about the naming convention of matrices: to vs from as left or right multiply
 * Make the plane be drawn using shaders for more efficiency
-* Put shader programs in their own files and compile and link them without using FW
+* Create a Scene class to have lights and stuff, then update it with dt to have the light move with const speed
 * Simplify jacobian calculation
 * Use ImGui for UI
 * Make prismatic joints possible?

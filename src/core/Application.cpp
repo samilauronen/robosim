@@ -308,7 +308,7 @@ void Application::render(void) {
 		glUniformMatrix4fv(gl_.view, 1, GL_FALSE, C.data());
 		glUniformMatrix4fv(gl_.projection, 1, GL_FALSE, P.data());
 
-		glUniform3f(gl_.lightPos, 5 * sin(temp), 2, 5 * cos(temp));
+		glUniform3f(gl_.lightPos, 2 * sin(temp), 0.5, 2 * cos(temp));
 		glUniform3f(gl_.viewPos, viewpos.x(), viewpos.y(), viewpos.z());
 		glUniform3f(gl_.lightColor, 1, 1, 1);
 

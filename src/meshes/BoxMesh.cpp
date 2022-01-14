@@ -8,42 +8,19 @@ BoxMesh::BoxMesh(float width, float height, float length, Vector3f color) :
 	height_(height),
 	length_(length)
 {
-	float xoff = width_ / 2.f;
-	float yoff = height_ / 2.f;
+	std::vector<RectangleMesh> faces;
 
-	// first square face
-	Vertex v1, v2, v3, v4;
-	v1.position = Vector3f(-xoff, yoff, 0);
-	v1.normal = Vector3f(-1, 1, -1).normalized();
-	v2.position = Vector3f(xoff, yoff, 0);
-	v2.normal = Vector3f(1, 1, -1).normalized();
-	v3.position = Vector3f(xoff, -yoff, 0);
-	v3.normal = Vector3f(1, -1, -1).normalized();
-	v4.position = Vector3f(-xoff, -yoff, 0);
-	v4.normal = Vector3f(-1, -1, -1).normalized();
+	faces.emplace_back(width, height, Vector3f(0, 0, 0), Vector3f(0, 0, -1), Vector3f(1, 0, 0));
+	faces.emplace_back(width, height, Vector3f(0, 0, length), Vector3f(0, 0, 1), Vector3f(1, 0, 0));
+	faces.emplace_back(width, length, Vector3f(0, height/2, length / 2), Vector3f(0, 1, 0), Vector3f(1, 0, 0));
+	faces.emplace_back(width, length, Vector3f(0, -height / 2, length / 2), Vector3f(0, -1, 0), Vector3f(1, 0, 0));
+	faces.emplace_back(height, length, Vector3f(-width/2, 0, length / 2), Vector3f(-1, 0,0), Vector3f(0, 1, 0));
+	faces.emplace_back(height, length, Vector3f(width / 2, 0, length / 2), Vector3f(1, 0, 0), Vector3f(0, 1, 0));
 
-	// triangles of the face: v1,v2,v3 and v3,v4,v1
-	vertices_.insert(vertices_.end(), { v1,v2,v3, v3,v4,v1 });
-
-	// second square face
-	Vertex v5, v6, v7, v8;
-	v5.position = Vector3f(-xoff, yoff, length_);
-	v5.normal = Vector3f(-1, 1, 1).normalized();
-	v6.position = Vector3f(xoff, yoff, length_);
-	v6.normal = Vector3f(1, 1, 1).normalized();
-	v7.position = Vector3f(xoff, -yoff, length_);
-	v7.normal = Vector3f(1, -1, 1).normalized();
-	v8.position = Vector3f(-xoff, -yoff, length_);
-	v8.normal = Vector3f(-1, -1, 1).normalized();
-
-	// triangles of the face: v5,v6,v7 and v7,v8,v5
-	vertices_.insert(vertices_.end(), { v5,v6,v7, v7,v8,v5 });
-
-	// triangles for faces along z-axis:
-	vertices_.insert(vertices_.end(), { v5,v1,v4, v5,v8,v4 });
-	vertices_.insert(vertices_.end(), { v5,v1,v2, v2,v5,v6 });
-	vertices_.insert(vertices_.end(), { v3,v4,v7, v8,v7,v4 });
-	vertices_.insert(vertices_.end(), { v6,v7,v2, v3,v2,v7 });
+	for (const RectangleMesh& face : faces) {
+		std::vector<Vertex> face_verts = face.getVertices();
+		vertices_.insert(vertices_.end(), face_verts.begin(), face_verts.end());
+	}
 
 	// set colors
 	int i = 0;
@@ -51,4 +28,20 @@ BoxMesh::BoxMesh(float width, float height, float length, Vector3f color) :
 		v.color = color;
 		i++;
 	}
+}
+
+RectangleMesh::RectangleMesh(float width, float height, Vector3f center_point, Vector3f normal, Vector3f x)
+{
+	Vector3f y = normal.cross(x);
+	Vector3f c = center_point;
+	float xoff = width / 2;
+	float yoff = height / 2;
+	Vertex v1, v2, v3, v4;
+	v1.position = c + x * xoff + y * yoff;
+	v2.position = c - x * xoff - y * yoff;
+	v3.position = c - x * xoff + y * yoff;
+	v4.position = c + x * xoff - y * yoff;
+
+	v1.normal = v2.normal = v3.normal = v4.normal = normal;
+	vertices_.insert(vertices_.end(), { v1,v3,v2, v1,v2,v4 });  // CCW ordering
 }
