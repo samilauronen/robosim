@@ -234,7 +234,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\App.cpp" />
+    <ClCompile Include="src\core\Application.cpp" />
     <ClCompile Include="src\core\DhParam.cpp" />
     <ClCompile Include="src\core\InverseKinematics.cpp" />
     <ClCompile Include="src\core\JointedLink.cpp" />
@@ -247,8 +247,9 @@
     <ClCompile Include="src\rendering\Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\core\App.hpp" />
+    <ClInclude Include="src\core\Application.hpp" />
     <ClInclude Include="src\core\DhParam.hpp" />
+    <ClInclude Include="src\core\Input.hpp" />
     <ClInclude Include="src\core\InverseKinematics.hpp" />
     <ClInclude Include="src\core\JointedLink.hpp" />
     <ClInclude Include="src\core\Robot.hpp" />

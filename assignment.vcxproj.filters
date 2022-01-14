@@ -7,7 +7,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\App.cpp">
+    <ClCompile Include="src\core\Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\core\DhParam.cpp">
@@ -42,7 +42,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\core\App.hpp" />
+    <ClInclude Include="src\core\Application.hpp" />
     <ClInclude Include="src\core\Utility.hpp" />
     <ClInclude Include="src\core\DhParam.hpp" />
     <ClInclude Include="src\core\InverseKinematics.hpp" />
@@ -54,6 +54,7 @@
     <ClInclude Include="src\meshes\Mesh.hpp" />
     <ClInclude Include="src\rendering\Camera.hpp" />
     <ClInclude Include="src\rendering\Shader.hpp" />
+    <ClInclude Include="src\core\Input.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="src\rendering\shaders\simple_shader.vs" />

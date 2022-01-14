@@ -8,7 +8,7 @@
 #include "rendering/Camera.hpp"
 #include "rendering/Shader.hpp"
 
-class App
+class Application
 {
 private:
 	enum class DrawMode
@@ -34,22 +34,24 @@ private:
 	};
 
 public:
-	App();
-	virtual         ~App(void) {}
+	Application();
+	virtual         ~Application(void) {}
 
 	void			createWindow(int width, int height);
 	void			initRendering(void);
-	void			loop(void);
+	void			run(void);
 	void			render(void);
 	void			update(void);
-	void			renderSkeleton(void);
+	void			keyPressed(GLFWwindow* window, int key, int scancode, int action, int mods);
+	void			mouseEvent(GLFWwindow* window, int button, int action, int mods);
+	void			mouseMoved(GLFWwindow* window, double xpos, double ypos);
 
 private:
-	App(const App&); // forbid copy
-	App& operator=       (const App&); // forbid assignment
+	Application(const Application&); // forbid copy
+	Application& operator=       (const Application&); // forbid assignment
 
 private:
-	Camera				cam_;
+	Camera				camera_;
 	GLFWwindow*			window_;
 	DrawMode			drawmode_;
 	bool				shading_toggle_;
@@ -66,6 +68,6 @@ private:
 	Eigen::Vector3f ray_start_, ray_end_;
 
 	std::unique_ptr<Shader>	shader_;
-	std::unique_ptr<Robot>  rob_;
+	std::unique_ptr<Robot>  robot_;
 };
 

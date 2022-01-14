@@ -1,7 +1,9 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <iostream>
 
 #include "Camera.hpp"
+#include <GLFW/glfw3.h>
 
 using namespace Eigen;
 
@@ -24,15 +26,51 @@ Camera::Camera(
 {
 }
 
-void Camera::handleEvent(const float dummy_event, float dt)
+void Camera::handleEvent(int button, int action, int posX, int posY)
 {
-#if 1
-    return;
-#else
     Matrix3f orient = getOrientation();
     Vector3f rotate = Vector3f::Zero();
     Vector3f move = Vector3f::Zero();
 
+#if 1
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) dragLeft_ = true;
+    else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) dragLeft_ = false;
+
+    if (button == GLFW_KEY_A)    move.x() -= 1.0f;
+    if (button == GLFW_KEY_D)    move.x() += 1.0f;
+    if (button == GLFW_KEY_F)    move.y() -= 1.0f;
+    if (button == GLFW_KEY_R)    move.y() += 1.0f;
+    if (button == GLFW_KEY_W)    move.z() -= 1.0f;
+    if (button == GLFW_KEY_S)    move.z() += 1.0f;
+    move *= 0.1f * speed_;
+
+    Vector3f delta = Vector3f(posX - last_x_, last_y_ - posY, 0.0f);
+
+    if (dragLeft_) {
+        rotate += delta * mouse_sensitivity_;
+        std::cout << rotate << std::endl;
+    }
+
+    if (!move.isZero())
+        position_ += orient * move;
+
+    if (rotate.x() != 0.0f || rotate.y() != 0.0f)
+    {
+        Vector3f tmp = orient.col(2) * cos(rotate.x()) - orient.col(0) * sin(rotate.x());
+        forward_ = (orient.col(1) * sin(rotate.y()) - tmp * cos(rotate.y())).normalized();
+        up_ = (orient.col(1) * cos(rotate.y()) + tmp * sin(rotate.y())).normalized();
+    }
+
+    if (rotate.z() != 0.0f)
+    {
+        Vector3f up = orient.transpose() * up_;
+        up_ = orient * Vector3f(up.x() * cos(rotate.z()) - sin(rotate.z()), up.x() * sin(rotate.z()) + up.y() * cos(rotate.z()), up.z());
+    }
+
+    last_x_ = posX;
+    last_y_ = posY;
+ 
+#else
 	switch (ev.type)
 	{
         case Window::EventType_KeyDown:

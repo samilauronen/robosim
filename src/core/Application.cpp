@@ -3,7 +3,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "App.hpp"
+#include "Application.hpp"
+#include "Input.hpp"
 #include "Utility.hpp"
 
 using namespace Eigen;
@@ -21,20 +22,20 @@ namespace {
 	};
 }
 
-App::App():
+Application::Application():
 	drawmode_(DrawMode::MODE_MESH_CPU),
 	shading_toggle_(false),
 	shading_mode_changed_(false),
-	cam_(Vector3f(0.0f, 0.0f, 1.5f))
+	camera_(Vector3f(0.0f, 0.0f, 1.5f))
 {
-	rob_ = std::make_unique<Robot>("src/resources/params.txt", Vector3f(1, 0, 0));
+	robot_ = std::make_unique<Robot>("src/resources/params.txt", Vector3f(1, 0, 0));
 
 	// now robot knows how many joints it has, we can create sliders to control them
-	joint_angle_controls_.resize(rob_->getNumJoints());
-	prev_controls_.resize(rob_->getNumJoints());
+	joint_angle_controls_.resize(robot_->getNumJoints());
+	prev_controls_.resize(robot_->getNumJoints());
 }
 
-void App::createWindow(int width, int height) {
+void Application::createWindow(int width, int height) {
 	// Init GLFW
 	glfwInit();
 
@@ -47,6 +48,7 @@ void App::createWindow(int width, int height) {
 
 	// Create a GLFWwindow object that we can use for GLFW's functions
 	window_ = glfwCreateWindow(width, height, "Robot Arm Simulator", nullptr, nullptr);
+	Input::SetApplication(this);
 
 	if (nullptr == window_)
 	{
@@ -70,7 +72,7 @@ void App::createWindow(int width, int height) {
 	initRendering();
 }
 
-void App::initRendering()
+void Application::initRendering()
 {
 	// Create vertex attribute objects and buffers for vertex data.
 	glGenVertexArrays(1, &gl_.simple_vao);
@@ -116,8 +118,12 @@ void App::initRendering()
 	checkGlErrors();
 }
 
-void App::loop(void) {
+void Application::run(void) {
 	assert(window_ != nullptr);
+
+	glfwSetKeyCallback(window_, Input::KeyboardCallback);
+	glfwSetCursorPosCallback(window_, Input::MouseMovedCallback);
+	glfwSetMouseButtonCallback(window_, Input::MouseButtonCallback);
 
 	// Game loop
 	while (!glfwWindowShouldClose(window_))
@@ -136,13 +142,31 @@ void App::loop(void) {
 	glfwTerminate();
 }
 
-void App::update(void) {
+void Application::keyPressed(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	assert(window == window_);
+	camera_.handleEvent(key, action, 0, 0);
+}
+
+void Application::mouseEvent(GLFWwindow* window, int button, int action, int mods)
+{
+	assert(window == window_);
+	camera_.handleEvent(button, action, 0, 0);
+}
+
+void Application::mouseMoved(GLFWwindow* window, double xpos, double ypos)
+{
+	assert(window == window_);
+	camera_.handleEvent(-99999, -99999, xpos, ypos);
+}
+
+void Application::update(void) {
 	uint64_t time_start = currentTimeMicros();
 
 	uint64_t dt_micros = time_start - time_end_;
 	float dt_millis = (float)dt_micros / 1000;
 
-	rob_->update(dt_millis);
+	robot_->update(dt_millis);
 
 	time_end_ = currentTimeMicros();
 
@@ -150,7 +174,7 @@ void App::update(void) {
 	// of camera with the keycode and action, let it do the work
 }
 
-void App::render(void) {
+void Application::render(void) {
 	// Clear screen
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -170,7 +194,7 @@ void App::render(void) {
 	// They will be fed to the shader program via uniform variables.
 
 	// World space -> clip space transform: simple projection and camera.
-	Matrix4f C = cam_.getWorldToClip();
+	Matrix4f C = camera_.getWorldToClip();
 
 	Matrix4f P;
 	static const float fNear = 0.3f, fFar = 4.0f;
@@ -234,15 +258,15 @@ void App::render(void) {
 
 		checkGlErrors();
 
-		rob_->renderSkeleton();
+		robot_->renderSkeleton();
 	}
 	else // mesh mode
 	{
 		if (drawmode_ == DrawMode::MODE_MESH_WIREFRAME) {
-			glPolygonMode(GL_FRONT, GL_LINE);
-			glPolygonMode(GL_BACK, GL_LINE);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
-		std::vector<Vertex> vertices = rob_->getMeshVertices();
+		
+		std::vector<Vertex> vertices = robot_->getMeshVertices();
 
 		float square_size = 0.2;
 		float grid_size = 50;
@@ -294,7 +318,7 @@ void App::render(void) {
 		gl_.objectColor = glGetUniformLocation(gl_.simple_shader, "objectColor");
 
 		Matrix4f model = Matrix4f::Identity();
-		Vector3f viewpos = cam_.getPosition();
+		Vector3f viewpos = camera_.getPosition();
 		temp += 0.01;
 
 		glUniformMatrix4fv(gl_.model, 1, GL_FALSE, model.data());
@@ -317,9 +341,9 @@ void App::render(void) {
 		//glVertex3f(ray_end_.x(), ray_end_.y(), ray_end_.z());
 		//glEnd();
 
-		// reset polygon mode
-		//glPolygonMode(GL_FRONT, GL_FILL);
-		//glPolygonMode(GL_BACK, GL_FILL);
+		if (drawmode_ == DrawMode::MODE_MESH_WIREFRAME) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
 
 		glBindVertexArray(0);
 		glUseProgram(0);

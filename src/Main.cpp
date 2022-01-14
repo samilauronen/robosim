@@ -1,8 +1,8 @@
-#include "core/App.hpp"
+#include "core/Application.hpp"
 
 // entry point
 int main(void) {
-	App app;
+	Application app;
 	app.createWindow(800, 600);
-	app.loop();
+	app.run();
 }
