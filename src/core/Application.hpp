@@ -4,9 +4,11 @@
 #include <memory>
 
 #include "Robot.hpp"
+#include "Event.hpp"
 #include "Eigen/Dense"
 #include "rendering/Camera.hpp"
 #include "rendering/Shader.hpp"
+
 
 class Application
 {
@@ -41,10 +43,8 @@ public:
 	void			initRendering(void);
 	void			run(void);
 	void			render(void);
-	void			update(void);
-	void			keyPressed(GLFWwindow* window, int key, int scancode, int action, int mods);
-	void			mouseEvent(GLFWwindow* window, int button, int action, int mods);
-	void			mouseMoved(GLFWwindow* window, double xpos, double ypos);
+	void			update(float dt);
+	void			handleEvent(const Event& ev);
 
 private:
 	Application(const Application&); // forbid copy

@@ -4,8 +4,8 @@
 #include <GLFW/glfw3.h>
 
 #include "Application.hpp"
-#include "Input.hpp"
 #include "Utility.hpp"
+#include "EventDispatcher.hpp"
 
 using namespace Eigen;
 
@@ -48,7 +48,7 @@ void Application::createWindow(int width, int height) {
 
 	// Create a GLFWwindow object that we can use for GLFW's functions
 	window_ = glfwCreateWindow(width, height, "Robot Arm Simulator", nullptr, nullptr);
-	Input::SetApplication(this);
+	EventDispatcher::SetApplication(this);
 
 	if (nullptr == window_)
 	{
@@ -121,17 +121,21 @@ void Application::initRendering()
 void Application::run(void) {
 	assert(window_ != nullptr);
 
-	glfwSetKeyCallback(window_, Input::KeyboardCallback);
-	glfwSetCursorPosCallback(window_, Input::MouseMovedCallback);
-	glfwSetMouseButtonCallback(window_, Input::MouseButtonCallback);
+	glfwSetKeyCallback(window_, EventDispatcher::KeyboardCallback);
+	glfwSetCursorPosCallback(window_, EventDispatcher::MouseMovedCallback);
+	glfwSetMouseButtonCallback(window_, EventDispatcher::MouseButtonCallback);
 
 	// Game loop
 	while (!glfwWindowShouldClose(window_))
 	{
+		// time delta
+		float dt = glfwGetTime();
+		glfwSetTime(0);
+
 		// Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
 		glfwPollEvents();
 
-		update();
+		update(dt);
 		render();
 		
 		// Swap the screen buffers
@@ -142,36 +146,15 @@ void Application::run(void) {
 	glfwTerminate();
 }
 
-void Application::keyPressed(GLFWwindow* window, int key, int scancode, int action, int mods)
+void Application::handleEvent(const Event& ev)
 {
-	assert(window == window_);
-	camera_.handleEvent(key, action, 0, 0);
+	camera_.handleEvent(ev);
 }
 
-void Application::mouseEvent(GLFWwindow* window, int button, int action, int mods)
-{
-	assert(window == window_);
-	camera_.handleEvent(button, action, 0, 0);
-}
+void Application::update(float dt) {
 
-void Application::mouseMoved(GLFWwindow* window, double xpos, double ypos)
-{
-	assert(window == window_);
-	camera_.handleEvent(-99999, -99999, xpos, ypos);
-}
-
-void Application::update(void) {
-	uint64_t time_start = currentTimeMicros();
-
-	uint64_t dt_micros = time_start - time_end_;
-	float dt_millis = (float)dt_micros / 1000;
-
-	robot_->update(dt_millis);
-
-	time_end_ = currentTimeMicros();
-
-	// TODO: handle key presses to move the camera, call the update() method
-	// of camera with the keycode and action, let it do the work
+	EventDispatcher::Update(window_, dt);
+	robot_->update(dt);
 }
 
 void Application::render(void) {

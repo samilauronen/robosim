@@ -249,7 +249,8 @@
   <ItemGroup>
     <ClInclude Include="src\core\Application.hpp" />
     <ClInclude Include="src\core\DhParam.hpp" />
-    <ClInclude Include="src\core\Input.hpp" />
+    <ClInclude Include="src\core\EventDispatcher.hpp" />
+    <ClInclude Include="src\core\Event.hpp" />
     <ClInclude Include="src\core\InverseKinematics.hpp" />
     <ClInclude Include="src\core\JointedLink.hpp" />
     <ClInclude Include="src\core\Robot.hpp" />
@@ -262,8 +263,8 @@
     <ClInclude Include="src\rendering\Shader.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="src\rendering\shaders\simple_shader.vs" />
-    <Text Include="src\rendering\shaders\simple_shader.fs" />
+    <Text Include="src\rendering\shaders\simple_shader.vert" />
+    <Text Include="src\rendering\shaders\simple_shader.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

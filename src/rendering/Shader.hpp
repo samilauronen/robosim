@@ -21,8 +21,8 @@ public:
         std::ifstream vShaderFile;
         std::ifstream fShaderFile;
 
-        std::string vertexPath = "src/rendering/shaders/" + shader_name + ".vs";
-        std::string fragmentPath = "src/rendering/shaders/" + shader_name + ".fs";
+        std::string vertexPath = "src/rendering/shaders/" + shader_name + ".vert";
+        std::string fragmentPath = "src/rendering/shaders/" + shader_name + ".frag";
 
         // ensure ifstream objects can throw exceptions:
         vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);

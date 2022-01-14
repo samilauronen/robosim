@@ -17,9 +17,9 @@ JointedLink::JointedLink(DhParam params, float joint_rotation, int link_number) 
 	this->updateLinkMatrix(rotation_);
 }
 
-void JointedLink::update(float dt_millis, Affine3f current_world_transform)
+void JointedLink::update(float dt, Affine3f current_world_transform)
 {
-	rotation_ += joint_speed_ * (dt_millis / 1000);
+	rotation_ += joint_speed_ * dt;
 	updateLinkMatrix(rotation_);
 	setToWorld(current_world_transform * link_matrix_);
 	updateMesh();

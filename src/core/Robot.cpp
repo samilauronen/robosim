@@ -69,7 +69,7 @@ void Robot::createLinks(const std::vector<DhParam>& dh_params)
 	cout << getJacobian() << endl;
 }
 
-void Robot::update(float dt_millis)
+void Robot::update(float dt)
 {
 	// in rad/s
 	const float JOINT_SPEED = M_PI / 3;
@@ -98,7 +98,7 @@ void Robot::update(float dt_millis)
 			link.setJointSpeed(0);
 		}
 
-		link.update(dt_millis, current_to_world);
+		link.update(dt, current_to_world);
 		current_to_world = current_to_world * link.getLinkMatrix();
 	}
 }

@@ -21,7 +21,7 @@ public:
 
 	// updates rotation based on current joint speed and time passed since last update
 	// also updates the link matrix and mesh position
-	void update(float dt_millis, Eigen::Affine3f current_world_transform);
+	void update(float dt, Eigen::Affine3f current_world_transform);
 
 	// used to evaluate the link matrix for any joint angle state
 	// useful for iterative inverse kinematics solvers

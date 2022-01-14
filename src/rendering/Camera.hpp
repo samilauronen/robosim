@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Eigen/Dense"
+#include "core/Event.hpp"
 
 class Camera
 {
@@ -24,7 +25,7 @@ public:
 
 	Eigen::Matrix3f getOrientation() const;
 
-	void handleEvent(int button, int action, int posX, int posY);
+	void handleEvent(const Event& ev);
 
 private:
 	Eigen::Vector3f position_;
