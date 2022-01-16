@@ -1,4 +1,9 @@
 #include <iostream>
+
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -7,6 +12,8 @@
 #include "Utility.hpp"
 #include "EventDispatcher.hpp"
 #include "meshes/BoxMesh.hpp"
+
+
 
 using namespace Eigen;
 
@@ -46,6 +53,7 @@ void Application::createWindow(int width, int height) {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
+	glfwWindowHint(GLFW_MAXIMIZED, GL_TRUE);
 
 	// Create a GLFWwindow object that we can use for GLFW's functions
 	window_ = glfwCreateWindow(width, height, "Robot Arm Simulator", nullptr, nullptr);
@@ -59,6 +67,17 @@ void Application::createWindow(int width, int height) {
 	}
 
 	glfwMakeContextCurrent(window_);
+	glfwSetKeyCallback(window_, EventDispatcher::KeyboardCallback);
+	glfwSetCursorPosCallback(window_, EventDispatcher::MouseMovedCallback);
+	glfwSetMouseButtonCallback(window_, EventDispatcher::MouseButtonCallback);
+
+	// Imgui setup
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	ImGui::StyleColorsDark();
+	ImGui_ImplGlfw_InitForOpenGL(window_, true);
+	ImGui_ImplOpenGL3_Init("#version 330");
 
 	// Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
 	glewExperimental = GL_TRUE;
@@ -122,19 +141,50 @@ void Application::initRendering()
 void Application::run(void) {
 	assert(window_ != nullptr);
 
-	glfwSetKeyCallback(window_, EventDispatcher::KeyboardCallback);
-	glfwSetCursorPosCallback(window_, EventDispatcher::MouseMovedCallback);
-	glfwSetMouseButtonCallback(window_, EventDispatcher::MouseButtonCallback);
+	bool show_demo_window = true;
+	bool show_another_window = false;
+	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+	float last_time = glfwGetTime();
+	float curr_time;
 
 	// Game loop
 	while (!glfwWindowShouldClose(window_))
 	{
-		// time delta
-		float dt = glfwGetTime();
-		glfwSetTime(0);
 
 		// Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
 		glfwPollEvents();
+
+		// time delta
+		curr_time = glfwGetTime();
+		float dt = curr_time - last_time;
+		last_time = curr_time;
+
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+		
+		// ============= ImGui example ===========
+		static float f = 0.0f;
+		static int counter = 0;
+
+		ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+		ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+		ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+		ImGui::Checkbox("Another Window", &show_another_window);
+
+		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+		ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+		if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+			counter++;
+		ImGui::SameLine();
+		ImGui::Text("counter = %d", counter);
+
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::End();
+		// =======================================
 
 		update(dt);
 		render();
@@ -142,6 +192,11 @@ void Application::run(void) {
 		// Swap the screen buffers
 		glfwSwapBuffers(window_);
 	}
+
+	// imgui cleanup
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 
 	// Terminate GLFW, clearing any resources allocated by GLFW.
 	glfwTerminate();
@@ -340,6 +395,10 @@ void Application::render(void) {
 		glBindVertexArray(0);
 		glUseProgram(0);
 	}
+
+	// GUI rendering:
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 	// Check for OpenGL errors.
 	checkGlErrors();

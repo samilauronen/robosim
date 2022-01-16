@@ -46,7 +46,7 @@ void Camera::handleEvent(const Event& ev)
         case EventType::MOUSE_MOVED:
         {
             Vector3f delta = Vector3f(ev.mouse_pos.x() - last_x_, last_y_ - ev.mouse_pos.y(), 0.0f);
-            if (dragLeft_) rotate += delta * mouse_sensitivity_;
+            if (dragMiddle_) rotate += delta * mouse_sensitivity_;
             last_x_ = ev.mouse_pos.x();
             last_y_ = ev.mouse_pos.y();
             break;
