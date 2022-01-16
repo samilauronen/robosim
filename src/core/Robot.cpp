@@ -14,7 +14,6 @@ using namespace std;
 /*
 * Unify naming conventions, camelCase vs snake_case
 * Do something with constants, maybe separate file? At least place them so that they make sense
-* Make the BoxMesh normals correct by duplicating vertices
 * Think about the naming convention of matrices: to vs from as left or right multiply
 * Make the plane be drawn using shaders for more efficiency
 * Create a Scene class to have lights and stuff, then update it with dt to have the light move with const speed
@@ -26,7 +25,6 @@ using namespace std;
 * Switch to quternions for trajectories to really work (interpolating orientation)
 * Make joints have an acceleration profile like in the lecture slides
 * Dynamics???
-* ImGui for more awesome ui?
 */
 
 /*

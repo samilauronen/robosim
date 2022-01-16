@@ -6,6 +6,7 @@
 #include "Application.hpp"
 #include "Utility.hpp"
 #include "EventDispatcher.hpp"
+#include "meshes/BoxMesh.hpp"
 
 using namespace Eigen;
 
@@ -248,8 +249,15 @@ void Application::render(void) {
 		if (drawmode_ == DrawMode::MODE_MESH_WIREFRAME) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
-		
+
 		std::vector<Vertex> vertices = robot_->getMeshVertices();
+
+		temp += 0.0001;
+		Vector3f lightpos = Vector3f(6 * sin(temp), 3.5, 6 * cos(temp));
+		BoxMesh lightmesh = BoxMesh(0.2, 0.2, 0.2, Vector3f(1, 1, 1));
+		lightmesh.transform(Translation3f(lightpos) * AngleAxisf::Identity());
+		std::vector<Vertex> lightVerts = lightmesh.getVertices();
+		vertices.insert(vertices.end(), lightVerts.begin(), lightVerts.end());
 
 		float square_size = 0.2;
 		float grid_size = 50;
@@ -302,13 +310,14 @@ void Application::render(void) {
 
 		Matrix4f model = Matrix4f::Identity();
 		Vector3f viewpos = camera_.getPosition();
-		temp += 0.01;
 
 		glUniformMatrix4fv(gl_.model, 1, GL_FALSE, model.data());
 		glUniformMatrix4fv(gl_.view, 1, GL_FALSE, C.data());
 		glUniformMatrix4fv(gl_.projection, 1, GL_FALSE, P.data());
 
-		glUniform3f(gl_.lightPos, 2 * sin(temp), 0.5, 2 * cos(temp));
+		
+
+		glUniform3f(gl_.lightPos, lightpos.x(), lightpos.y(), lightpos.z());
 		glUniform3f(gl_.viewPos, viewpos.x(), viewpos.y(), viewpos.z());
 		glUniform3f(gl_.lightColor, 1, 1, 1);
 
