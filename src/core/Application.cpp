@@ -55,6 +55,7 @@ void Application::createWindow(int width, int height) {
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 	glfwWindowHint(GLFW_MAXIMIZED, GL_TRUE);
 
+
 	// Create a GLFWwindow object that we can use for GLFW's functions
 	window_ = glfwCreateWindow(width, height, "Robot Arm Simulator", nullptr, nullptr);
 	EventDispatcher::SetApplication(this);
