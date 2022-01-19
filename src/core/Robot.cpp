@@ -12,6 +12,7 @@ using namespace std;
 
 // TODO:
 /*
+* Either remove everything immediate-mode opengl related or try to make it work somehow
 * Unify naming conventions, camelCase vs snake_case
 * Do something with constants, maybe separate file? At least place them so that they make sense
 * Think about the naming convention of matrices: to vs from as left or right multiply

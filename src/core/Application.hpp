@@ -43,6 +43,7 @@ public:
 	void			run(void);
 	void			render(void);
 	void			update(float dt);
+	void			applyJointControls();
 
 private:
 	Application(const Application&); // forbid copy
