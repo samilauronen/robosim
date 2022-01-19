@@ -4,7 +4,6 @@
 #include <math.h>
 
 #include "Eigen/Dense"
-#include <Eigen/StdVector>
 
 struct Vertex
 {

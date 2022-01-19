@@ -1,11 +1,11 @@
-#include "Robot.hpp"
-#include "Utility.hpp"
-#include "InverseKinematics.hpp"
-
 #include <algorithm>
 #include <assert.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
+
+#include "Robot.hpp"
+#include "Utility.hpp"
+#include "InverseKinematics.hpp"
 
 using namespace Eigen;
 using namespace std;

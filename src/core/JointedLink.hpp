@@ -3,16 +3,13 @@
 #include <vector>
 #include <memory>
 
+#define GLEW_STATIC
+#include "GL/glew.h"
+#include "GLFW/glfw3.h"
 #include "Eigen/Dense"
+
 #include "DhParam.hpp"
 #include "meshes/JointedLinkMesh.hpp"
-
-// GLEW
-#define GLEW_STATIC
-#include <GL/glew.h>
-
-// GLFW
-#include <GLFW/glfw3.h>
 
 // describes a combination of a joint and a link
 class JointedLink {

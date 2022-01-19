@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include "Camera.hpp"
-#include "GLFW/glfw3.h"
 
 using namespace Eigen;
 
@@ -26,54 +25,50 @@ Camera::Camera(
 {
 }
 
-void Camera::handleEvent(const Event& ev)
+void Camera::update(float dt, GLFWwindow* window)
 {
     Matrix3f orient = getOrientation();
     Vector3f rotate = Vector3f::Zero();
     Vector3f move = Vector3f::Zero();
 
-    switch (ev.type) {
-        case EventType::KEY_DOWN:
-            if (ev.key == GLFW_MOUSE_BUTTON_LEFT)    dragLeft_ = true;
-            if (ev.key == GLFW_MOUSE_BUTTON_MIDDLE)  dragMiddle_ = true;
-            if (ev.key == GLFW_MOUSE_BUTTON_RIGHT)   dragRight_ = true;
-            break;
-        case EventType::KEY_UP:
-            if (ev.key == GLFW_MOUSE_BUTTON_LEFT)    dragLeft_ = false;
-            if (ev.key == GLFW_MOUSE_BUTTON_MIDDLE)  dragMiddle_ = false;
-            if (ev.key == GLFW_MOUSE_BUTTON_RIGHT)   dragRight_ = false;
-            break;
-        case EventType::MOUSE_MOVED:
-        {
-            Vector3f delta = Vector3f(ev.mouse_pos.x() - last_x_, last_y_ - ev.mouse_pos.y(), 0.0f);
-            if (dragMiddle_) rotate += delta * mouse_sensitivity_;
-            last_x_ = ev.mouse_pos.x();
-            last_y_ = ev.mouse_pos.y();
-            break;
-        }
-        case EventType::UPDATE:
-        {
-            if (glfwGetKey(ev.window, GLFW_KEY_A) == GLFW_PRESS) move.x() -= 1.0f;
-            if (glfwGetKey(ev.window, GLFW_KEY_D) == GLFW_PRESS) move.x() += 1.0f;
-            if (glfwGetKey(ev.window, GLFW_KEY_F) == GLFW_PRESS) move.y() -= 1.0f;
-            if (glfwGetKey(ev.window, GLFW_KEY_R) == GLFW_PRESS) move.y() += 1.0f;
-            if (glfwGetKey(ev.window, GLFW_KEY_W) == GLFW_PRESS) move.z() -= 1.0f;
-            if (glfwGetKey(ev.window, GLFW_KEY_S) == GLFW_PRESS) move.z() += 1.0f;
-            move *= ev.dt * speed_;
-            break;
-        }
-    }
+    // check if mouse is dragged with a button pressed
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)   == GLFW_PRESS)   dragLeft_ = true;
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS)   dragMiddle_ = true;
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)    dragRight_ = true;
+    // check if released
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)   dragLeft_ = false;
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_RELEASE) dragMiddle_ = false;
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT)  == GLFW_RELEASE) dragRight_ = false;
 
-    if (!move.isZero())
+    // calculate mouse delta
+    double mouse_x, mouse_y;
+    glfwGetCursorPos(window, &mouse_x, &mouse_y);
+    Vector3f delta = Vector3f(mouse_x - last_mouse_pos.x(), last_mouse_pos.y() - mouse_y, 0.0f);
+    last_mouse_pos.x() = mouse_x;
+    last_mouse_pos.y() = mouse_y;
+
+    // increment rotation
+    if (dragMiddle_) rotate += delta * mouse_sensitivity_;
+
+    // check movement keys and set movement vector
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) move.x() -= 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) move.x() += 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) move.y() -= 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) move.y() += 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) move.z() -= 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) move.z() += 1.0f;
+    move *= dt * speed_;
+
+    // apply movement and rotation
+    if (!move.isZero()) {
         position_ += orient * move;
-
+    }
     if (rotate.x() != 0.0f || rotate.y() != 0.0f)
     {
         Vector3f tmp = orient.col(2) * cos(rotate.x()) - orient.col(0) * sin(rotate.x());
         forward_ = (orient.col(1) * sin(rotate.y()) - tmp * cos(rotate.y())).normalized();
         up_ = (orient.col(1) * cos(rotate.y()) + tmp * sin(rotate.y())).normalized();
     }
-
     if (rotate.z() != 0.0f)
     {
         Vector3f up = orient.transpose() * up_;

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "GLFW/glfw3.h"
 #include "Eigen/Dense"
-#include "core/Event.hpp"
 
 class Camera
 {
@@ -25,7 +25,7 @@ public:
 
 	Eigen::Matrix3f getOrientation() const;
 
-	void handleEvent(const Event& ev);
+	void update(float dt, GLFWwindow* window);
 
 private:
 	Eigen::Vector3f position_;
@@ -36,7 +36,7 @@ private:
 
 	float fov_, near_, far_;
 
-	int last_x_, last_y_;
+	Eigen::Vector2d last_mouse_pos;
 
 	float speed_;
 	float mouse_sensitivity_;

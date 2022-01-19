@@ -1,17 +1,11 @@
 #pragma once
-
-#include "Eigen/Dense"
-
 #include <iostream>
 #include <chrono>
 
-// GLEW
 #define GLEW_STATIC
-#include <GL/glew.h>
-
-// GLFW
-#include <GLFW/glfw3.h>
-
+#include "GL/glew.h"
+#include "GLFW/glfw3.h"
+#include "Eigen/Dense"
 
 inline uint64_t currentTimeMillis() {
 	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::

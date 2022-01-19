@@ -9,7 +9,7 @@ private:
 	float width_, height_, length_;
 };
 
-class RectangleMesh : public Mesh {
+class Quad : public Mesh {
 public:
-	RectangleMesh(float width, float height, Eigen::Vector3f center_point, Eigen::Vector3f normal, Eigen::Vector3f x);
+	Quad(float width, float height, Eigen::Vector3f center_point, Eigen::Vector3f normal, Eigen::Vector3f x);
 };

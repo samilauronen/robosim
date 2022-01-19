@@ -1,10 +1,10 @@
-#include "DhParam.hpp"
-
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #define _USE_MATH_DEFINES
 #include <math.h>
+
+#include "DhParam.hpp"
 
 using namespace std;
 

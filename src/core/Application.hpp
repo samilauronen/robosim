@@ -3,9 +3,8 @@
 #include <vector>
 #include <memory>
 
-#include "Robot.hpp"
-#include "Event.hpp"
 #include "Eigen/Dense"
+#include "Robot.hpp"
 #include "rendering/Camera.hpp"
 #include "rendering/Shader.hpp"
 
@@ -44,7 +43,6 @@ public:
 	void			run(void);
 	void			render(void);
 	void			update(float dt);
-	void			handleEvent(const Event& ev);
 
 private:
 	Application(const Application&); // forbid copy

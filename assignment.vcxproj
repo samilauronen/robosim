@@ -269,8 +269,6 @@
     <ClInclude Include="lib\imgui\imstb_truetype.h" />
     <ClInclude Include="src\core\Application.hpp" />
     <ClInclude Include="src\core\DhParam.hpp" />
-    <ClInclude Include="src\core\EventDispatcher.hpp" />
-    <ClInclude Include="src\core\Event.hpp" />
     <ClInclude Include="src\core\InverseKinematics.hpp" />
     <ClInclude Include="src\core\JointedLink.hpp" />
     <ClInclude Include="src\core\Robot.hpp" />

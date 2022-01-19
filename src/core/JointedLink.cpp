@@ -1,7 +1,7 @@
 #include <assert.h>
 
 #include "JointedLink.hpp"
-#include "utility.hpp"
+#include "Utility.hpp"
 
 using namespace Eigen;
 

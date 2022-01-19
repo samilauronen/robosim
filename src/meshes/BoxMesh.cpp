@@ -8,7 +8,7 @@ BoxMesh::BoxMesh(float width, float height, float length, Vector3f color) :
 	height_(height),
 	length_(length)
 {
-	std::vector<RectangleMesh> faces;
+	std::vector<Quad> faces;
 
 	faces.emplace_back(width, height, Vector3f(0, 0, 0), Vector3f(0, 0, -1), Vector3f(1, 0, 0));
 	faces.emplace_back(width, height, Vector3f(0, 0, length), Vector3f(0, 0, 1), Vector3f(1, 0, 0));
@@ -17,7 +17,7 @@ BoxMesh::BoxMesh(float width, float height, float length, Vector3f color) :
 	faces.emplace_back(height, length, Vector3f(-width/2, 0, length / 2), Vector3f(-1, 0,0), Vector3f(0, 1, 0));
 	faces.emplace_back(height, length, Vector3f(width / 2, 0, length / 2), Vector3f(1, 0, 0), Vector3f(0, 1, 0));
 
-	for (const RectangleMesh& face : faces) {
+	for (const Quad& face : faces) {
 		std::vector<Vertex> face_verts = face.getVertices();
 		vertices_.insert(vertices_.end(), face_verts.begin(), face_verts.end());
 	}
@@ -30,7 +30,7 @@ BoxMesh::BoxMesh(float width, float height, float length, Vector3f color) :
 	}
 }
 
-RectangleMesh::RectangleMesh(float width, float height, Vector3f center_point, Vector3f normal, Vector3f x)
+Quad::Quad(float width, float height, Vector3f center_point, Vector3f normal, Vector3f x)
 {
 	Vector3f y = normal.cross(x);
 	Vector3f c = center_point;

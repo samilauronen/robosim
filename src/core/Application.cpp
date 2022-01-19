@@ -5,15 +5,12 @@
 #include "imgui_impl_opengl3.h"
 
 #define GLEW_STATIC
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "GL/glew.h"
+#include "GLFW/glfw3.h"
 
 #include "Application.hpp"
 #include "Utility.hpp"
-#include "EventDispatcher.hpp"
 #include "meshes/BoxMesh.hpp"
-
-
 
 using namespace Eigen;
 
@@ -58,19 +55,13 @@ void Application::createWindow(int width, int height) {
 
 	// Create a GLFWwindow object that we can use for GLFW's functions
 	window_ = glfwCreateWindow(width, height, "Robot Arm Simulator", nullptr, nullptr);
-	EventDispatcher::SetApplication(this);
-
 	if (nullptr == window_)
 	{
 		std::cerr << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
 		exit(EXIT_FAILURE);
 	}
-
 	glfwMakeContextCurrent(window_);
-	glfwSetKeyCallback(window_, EventDispatcher::KeyboardCallback);
-	glfwSetCursorPosCallback(window_, EventDispatcher::MouseMovedCallback);
-	glfwSetMouseButtonCallback(window_, EventDispatcher::MouseButtonCallback);
 
 	// Imgui setup
 	IMGUI_CHECKVERSION();
@@ -149,14 +140,12 @@ void Application::run(void) {
 	float last_time = glfwGetTime();
 	float curr_time;
 
-	// Game loop
+	// program loop
 	while (!glfwWindowShouldClose(window_))
 	{
-
-		// Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
 		glfwPollEvents();
 
-		// time delta
+		// calculate time delta
 		curr_time = glfwGetTime();
 		float dt = curr_time - last_time;
 		last_time = curr_time;
@@ -203,14 +192,8 @@ void Application::run(void) {
 	glfwTerminate();
 }
 
-void Application::handleEvent(const Event& ev)
-{
-	camera_.handleEvent(ev);
-}
-
 void Application::update(float dt) {
-
-	EventDispatcher::Update(window_, dt);
+	camera_.update(dt, window_);
 	robot_->update(dt);
 }
 

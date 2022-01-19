@@ -2,7 +2,7 @@
 
 #include "Eigen/Dense"
 #include "Robot.hpp"
-#include "utility.hpp"
+#include "Utility.hpp"
 
 // TODO: Add numerical IK solvers based on the paper recommendations
 // http://math.ucsd.edu/~sbuss/ResearchWeb/ikmethods/iksurvey.pdf
