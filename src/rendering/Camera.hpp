@@ -16,6 +16,7 @@ public:
 	void setSpeed(float new_speed) { speed_ = new_speed; };
 	void setMouseSensitivity(float new_sensitivity) { mouse_sensitivity_ = new_sensitivity; };
 
+	float			getFOV() const { return fov_; };
 	Eigen::Vector3f getUp() const { return up_; };
 	Eigen::Vector3f getForward() const { return forward_; };
 	Eigen::Vector3f getPosition() const { return position_; };

@@ -44,6 +44,7 @@ public:
 	void			render(void);
 	void			update(float dt);
 	void			applyJointControls();
+	void			setIkTarget();
 
 private:
 	Application(const Application&); // forbid copy

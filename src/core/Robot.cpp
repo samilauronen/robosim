@@ -35,7 +35,8 @@ using namespace std;
 * The first frame, which is conventionally the zero:th frame, is now simply the base frame
 * This means that the worldToBase transform describes what conventionally would be worldToBase * baseToZero
 */
-Robot::Robot(std::string dh_param_filename, Vector3f location)
+Robot::Robot(std::string dh_param_filename, Vector3f location):
+	ik_target_(Vector3f::Zero())
 {
 	// set the transformation from world to base, which includes rotation to turn z-axis upwards
 	// and the robots location in the world

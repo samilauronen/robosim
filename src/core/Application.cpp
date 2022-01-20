@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <sstream>
 
 #include "imgui.h"
@@ -68,7 +68,58 @@ void Application::createWindow(int width, int height) {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
-	ImGui::StyleColorsDark();
+
+	{
+		ImGuiStyle* style = &ImGui::GetStyle();
+
+		style->WindowPadding = ImVec2(15, 15);
+		style->WindowRounding = 5.0f;
+		style->FramePadding = ImVec2(5, 5);
+		style->FrameRounding = 4.0f;
+		style->ItemSpacing = ImVec2(12, 8);
+		style->ItemInnerSpacing = ImVec2(8, 6);
+		style->IndentSpacing = 25.0f;
+		style->ScrollbarSize = 15.0f;
+		style->ScrollbarRounding = 9.0f;
+		style->GrabMinSize = 5.0f;
+		style->GrabRounding = 3.0f;
+
+		style->Colors[ImGuiCol_Text] = ImVec4(0.80f, 0.80f, 0.83f, 1.00f);
+		style->Colors[ImGuiCol_TextDisabled] = ImVec4(0.24f, 0.23f, 0.29f, 1.00f);
+		style->Colors[ImGuiCol_WindowBg] = ImVec4(0.06f, 0.05f, 0.07f, 1.00f);
+		style->Colors[ImGuiCol_PopupBg] = ImVec4(0.07f, 0.07f, 0.09f, 1.00f);
+		style->Colors[ImGuiCol_Border] = ImVec4(0.80f, 0.80f, 0.83f, 0.88f);
+		style->Colors[ImGuiCol_BorderShadow] = ImVec4(0.92f, 0.91f, 0.88f, 0.00f);
+		style->Colors[ImGuiCol_FrameBg] = ImVec4(0.10f, 0.09f, 0.12f, 1.00f);
+		style->Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.24f, 0.23f, 0.29f, 1.00f);
+		style->Colors[ImGuiCol_FrameBgActive] = ImVec4(0.56f, 0.56f, 0.58f, 1.00f);
+		style->Colors[ImGuiCol_TitleBg] = ImVec4(0.10f, 0.09f, 0.12f, 1.00f);
+		style->Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(1.00f, 0.98f, 0.95f, 0.75f);
+		style->Colors[ImGuiCol_TitleBgActive] = ImVec4(0.07f, 0.07f, 0.09f, 1.00f);
+		style->Colors[ImGuiCol_MenuBarBg] = ImVec4(0.10f, 0.09f, 0.12f, 1.00f);
+		style->Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.10f, 0.09f, 0.12f, 1.00f);
+		style->Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.80f, 0.80f, 0.83f, 0.31f);
+		style->Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.56f, 0.56f, 0.58f, 1.00f);
+		style->Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.06f, 0.05f, 0.07f, 1.00f);
+		style->Colors[ImGuiCol_CheckMark] = ImVec4(0.80f, 0.80f, 0.83f, 0.31f);
+		style->Colors[ImGuiCol_SliderGrab] = ImVec4(0.80f, 0.80f, 0.83f, 0.31f);
+		style->Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.06f, 0.05f, 0.07f, 1.00f);
+		style->Colors[ImGuiCol_Button] = ImVec4(0.10f, 0.09f, 0.12f, 1.00f);
+		style->Colors[ImGuiCol_ButtonHovered] = ImVec4(0.24f, 0.23f, 0.29f, 1.00f);
+		style->Colors[ImGuiCol_ButtonActive] = ImVec4(0.56f, 0.56f, 0.58f, 1.00f);
+		style->Colors[ImGuiCol_Header] = ImVec4(0.10f, 0.09f, 0.12f, 1.00f);
+		style->Colors[ImGuiCol_HeaderHovered] = ImVec4(0.56f, 0.56f, 0.58f, 1.00f);
+		style->Colors[ImGuiCol_HeaderActive] = ImVec4(0.06f, 0.05f, 0.07f, 1.00f);
+		style->Colors[ImGuiCol_ResizeGrip] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+		style->Colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.56f, 0.56f, 0.58f, 1.00f);
+		style->Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.06f, 0.05f, 0.07f, 1.00f);
+		style->Colors[ImGuiCol_PlotLines] = ImVec4(0.40f, 0.39f, 0.38f, 0.63f);
+		style->Colors[ImGuiCol_PlotLinesHovered] = ImVec4(0.25f, 1.00f, 0.00f, 1.00f);
+		style->Colors[ImGuiCol_PlotHistogram] = ImVec4(0.40f, 0.39f, 0.38f, 0.63f);
+		style->Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(0.25f, 1.00f, 0.00f, 1.00f);
+		style->Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.25f, 1.00f, 0.00f, 0.43f);
+	}
+
 	ImGui_ImplGlfw_InitForOpenGL(window_, true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 
@@ -138,6 +189,8 @@ void Application::run(void) {
 	bool show_another_window = false;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+	std::vector<DhParam> robot_params = robot_->getDhParams();
+
 	float last_time = glfwGetTime();
 	float curr_time;
 
@@ -151,22 +204,88 @@ void Application::run(void) {
 		float dt = curr_time - last_time;
 		last_time = curr_time;
 
-		// ============= ImGui test ===========
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
+		// ============= ImGui  ================
+		{
+			using namespace ImGui;
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			NewFrame();
 
-		ImGui::Begin("Joint angle controls:");
-		for (int i = 0; i < robot_->getNumJoints(); i++) {
-			ImGui::PushID(i);
-			ImGui::Text("joint %d", i);
-			ImGui::SameLine();
-			ImGui::SliderAngle("", &joint_angle_controls_[i]);
-			ImGui::PopID();
+			Begin("Joint angle controls:");
+			for (int i = 0; i < robot_->getNumJoints(); i++) {
+				PushID(i);
+				Text("joint %d", i);
+				SameLine();
+				SliderAngle("", &joint_angle_controls_[i]);
+				PopID();
+			}
+			End();
+
+			Begin("TCP info");
+			Vector3f tcp_pos = robot_->getTcpWorldPosition();
+			Vector3f tcp_target = robot_->getTargetTcpPosition();
+			VectorXf tcp_speed = robot_->getTcpSpeed();
+
+			Columns(2);
+			Text("TCP position:");
+			NextColumn();
+			Text("x: % 2.2f, y: % 2.2f, z: % 2.2f", tcp_pos.x(), tcp_pos.y(), tcp_pos.z());
+			Separator();
+			NextColumn();
+			Text("TCP target:");
+			NextColumn();
+			Text("x: % 2.2f, y: % 2.2f, z: % 2.2f", tcp_target.x(), tcp_target.y(), tcp_target.z());
+			Separator();
+			NextColumn();
+			Text("TCP speed:");
+			NextColumn();
+			Text("x: % 2.2f, y: % 2.2f, z: % 2.2f\nrx: % 2.2f, ry: % 2.2f, rz: % 2.2f",
+				tcp_speed[0], tcp_speed[1], tcp_speed[2], tcp_speed[3], tcp_speed[4], tcp_speed[5]);
+
+			End();
+
+			Begin("Parameter editor");
+			if (BeginTable("paramtable", robot_->getNumJoints() + 1)) {
+				// header row
+				TableHeadersRow();
+				TableNextColumn();
+				Text("");
+				TableNextColumn();
+				Text("a");
+				TableNextColumn();
+				Text("d");
+				TableNextColumn();
+				Text("alpha");
+
+				// table content rows
+				for (int i = 0; i < robot_->getNumJoints(); i++) {
+					PushID(i);
+					TableNextRow();
+					TableNextColumn();
+					TableSetupColumn("", 0, 10);
+					Text("joint %d", i);
+					TableNextColumn();
+					TableSetupColumn("a", 0, 10);
+					InputFloat("##a", &robot_params[i].a);
+					TableNextColumn();
+					TableSetupColumn("b", 0, 10);
+					InputFloat("##b", &robot_params[i].d);
+					TableNextColumn();
+					TableSetupColumn("c", 0, 10);
+					InputFloat("##c", &robot_params[i].alpha);
+					PopID();
+				}
+				EndTable();
+			}
+			if (Button("Apply")) {
+				robot_->setDhParams(robot_params);
+			}
+			End();
+
+			Begin("Performace");
+			Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / GetIO().Framerate, GetIO().Framerate);
+			End();
 		}
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::End();
-		// =======================================
 
 		update(dt);
 		render();
@@ -186,8 +305,45 @@ void Application::run(void) {
 
 void Application::update(float dt) {
 	applyJointControls();
+	if (glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+		setIkTarget();
 	camera_.update(dt, window_);
 	robot_->update(dt);
+}
+
+void Application::setIkTarget() {
+	// convert mouse pos to normalized image coordinates
+	Vector2d mouse_pos;
+	int window_width, window_height;
+	glfwGetCursorPos(window_, &mouse_pos.x(), &mouse_pos.y());
+	glfwGetWindowSize(window_, &window_width, &window_height);
+	float x = mouse_pos.x() / window_width;
+	float y = mouse_pos.y() / window_height;
+	x = x * 2 - 1;
+	y = -(y * 2 - 1);
+
+	// grab camera attributes
+	float fov = camera_.getFOV() * M_PI / 180; // damn thing was in degrees!
+	Vector3f up = camera_.getUp();
+	Vector3f direction = camera_.getForward();
+	Vector3f horizontal = direction.cross(up);
+	Vector3f position = camera_.getPosition();
+
+	// calculate distance from "image plane"
+	float dist = 1 / tan(fov / 2);
+
+	// create ray
+	Vector3f x_vec = x * horizontal.normalized();
+	Vector3f y_vec = y * up.normalized();
+	Vector3f dist_vec = dist * direction;
+	Vector3f ray_vec = (dist_vec + x_vec + y_vec).normalized();
+
+	// ray should ge going from [position] towards [ray_vec]
+	float t = 1;
+	ray_start_ = position;
+	ray_end_ = position + ray_vec * t;
+
+	robot_->setTargetTcpPosition(ray_end_);
 }
 
 void Application::applyJointControls() {
@@ -300,8 +456,13 @@ void Application::render(void) {
 		Vector3f lightpos = Vector3f(6 * sin(temp), 3.5, 6 * cos(temp));
 		BoxMesh lightmesh = BoxMesh(0.2, 0.2, 0.2, Vector3f(1, 1, 1));
 		lightmesh.transform(Translation3f(lightpos) * AngleAxisf::Identity());
-		std::vector<Vertex> lightVerts = lightmesh.getVertices();
-		vertices.insert(vertices.end(), lightVerts.begin(), lightVerts.end());
+		std::vector<Vertex> lightverts = lightmesh.getVertices();
+		vertices.insert(vertices.end(), lightverts.begin(), lightverts.end());
+
+		BoxMesh ikmesh = BoxMesh(0.01, 0.01, 0.01, Vector3f(1, 0.2, 0.2));
+		ikmesh.transform(Translation3f(ray_end_) * AngleAxisf::Identity());
+		std::vector<Vertex> ikverts = ikmesh.getVertices();
+		vertices.insert(vertices.end(), ikverts.begin(), ikverts.end());
 
 		float square_size = 0.2;
 		float grid_size = 50;

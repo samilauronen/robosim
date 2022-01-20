@@ -25,19 +25,20 @@ public:
 	Eigen::Affine3f evalLinkMatrix(float rotationAngle) const;
 
 	// setters
+	void setDhParams(const DhParam& params) { params_ = params; recreateMesh(); };
 	void setToWorld(const Eigen::Affine3f& to_world) { to_world_ = to_world; };
 	void setJointRotation(float rotation_angle) { rotation_ = rotation_angle; };
 	void setJointSpeed(float new_speed) { joint_speed_ = new_speed; };
 	void setJointTargetRotation(float target_angle) { target_rotation_ = target_angle; };
 
 	// matching getters
+	DhParam getDhParams() const { return params_; };
 	Eigen::Affine3f getToWorld() const { return to_world_; };
 	float getJointRotation() const { return rotation_; };
 	float getJointSpeed() const { return joint_speed_; };
 	float getJointTargetRotation() const { return target_rotation_; };
 
 	// no setter
-	DhParam getDhParams() const { return params_; };
 	Eigen::Affine3f getLinkMatrix() const { return link_matrix_; };
 
 	// returns the vertices of the mesh that represents the combination of a joint and a link
@@ -47,6 +48,7 @@ public:
 private:
 	void updateLinkMatrix(float rotationAngle);
 	void updateMesh();
+	void recreateMesh();
 
 	DhParam params_;		// DH parameters of this link
 

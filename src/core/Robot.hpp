@@ -43,6 +43,21 @@ public:
 	size_t					getNumJoints() const { return links_.size(); };
 	Eigen::Affine3f			getWorldToBase() const { return worldToBase_; };
 
+	// for editing robot params with GUI
+	std::vector<DhParam>	getDhParams() const {
+		std::vector<DhParam> params;
+		for (const JointedLink& l : links_) {
+			params.push_back(l.getDhParams());
+		}
+		return params;
+	}
+	void setDhParams(std::vector<DhParam> new_params) {
+		for (int i = 0; i < getNumJoints(); i++) {
+			JointedLink& l = links_[i];
+			l.setDhParams(new_params[i]);
+		}
+	}
+
 private:
 	Eigen::Affine3f	worldToBase_;
 

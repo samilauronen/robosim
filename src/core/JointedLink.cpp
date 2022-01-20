@@ -48,6 +48,10 @@ void JointedLink::updateMesh() {
 	mesh_.setToWorldTransform(transformation);
 }
 
+void JointedLink::recreateMesh() {
+	mesh_ = JointedLinkMesh(params_.d, params_.a, link_number_);
+}
+
 Affine3f JointedLink::evalLinkMatrix(float rotationAngle) const
 {
 	// https://www.youtube.com/watch?v=nuB_7BkYNMk
