@@ -14,7 +14,7 @@ using namespace std;
 /*
 * Either remove everything immediate-mode opengl related or try to make it work somehow
 * Unify naming conventions, camelCase vs snake_case
-* Do something with constants, maybe separate file? At least place them so that they make sense
+* Do something with constants, maybe separate file?
 * Think about the naming convention of matrices: to vs from as left or right multiply
 * Make the plane be drawn using shaders for more efficiency
 * Create a Scene class to have lights and stuff, then update it with dt to have the light move with const speed
@@ -22,7 +22,6 @@ using namespace std;
 * Use ImGui for UI
 * Make prismatic joints possible?
 * Maybe have a toggle for drawing a wireframe-ball around the robot, visualizing it's range
-* inverse jacobians!, for trajectories!
 * Switch to quternions for trajectories to really work (interpolating orientation)
 * Make joints have an acceleration profile like in the lecture slides
 * Dynamics???
@@ -69,7 +68,7 @@ void Robot::createLinks(const std::vector<DhParam>& dh_params)
 void Robot::update(float dt)
 {
 	// in rad/s
-	const float JOINT_SPEED = M_PI / 3;
+	const float JOINT_SPEED = M_PI / 5;
 
 	// chain the link transformations like so:
 	// for link 0 the result should be W_T_0 (which is W_T_B * B_T_0)
@@ -85,7 +84,7 @@ void Robot::update(float dt)
 
 		float diff = current - target;
 
-		const float JOINT_POSITIONAL_ACCURACY = 0.001f;
+		const float JOINT_POSITIONAL_ACCURACY = 0.005f;
 		// determintes whether joint should move
 		// TODO: create a joint controller class for doing this?
 		// or maybe move this inside the JointedLink class

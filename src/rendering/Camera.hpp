@@ -10,7 +10,7 @@ public:
 		const Eigen::Vector3f& position,
 		const Eigen::Vector3f& forward = Eigen::Vector3f(0.0f, 0.0f, -1.0f),
 		const Eigen::Vector3f& up = Eigen::Vector3f(0.0f, 1.0f, 0.0f),
-		float speed = 10.0f, float mouse_sensitivity = 0.01f
+		float speed = 6.0f, float mouse_sensitivity = 0.01f
 	);
 
 	void setSpeed(float new_speed) { speed_ = new_speed; };
