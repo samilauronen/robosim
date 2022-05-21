@@ -172,6 +172,7 @@
     <ClCompile Include="src\core\DhParam.cpp" />
     <ClCompile Include="src\core\InverseKinematics.cpp" />
     <ClCompile Include="src\core\JointedLink.cpp" />
+    <ClCompile Include="src\core\PidController.cpp" />
     <ClCompile Include="src\core\Robot.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\meshes\BoxMesh.cpp" />
@@ -196,6 +197,7 @@
     <ClInclude Include="src\core\DhParam.hpp" />
     <ClInclude Include="src\core\InverseKinematics.hpp" />
     <ClInclude Include="src\core\JointedLink.hpp" />
+    <ClInclude Include="src\core\PidController.hpp" />
     <ClInclude Include="src\core\Robot.hpp" />
     <ClInclude Include="src\core\Utility.hpp" />
     <ClInclude Include="src\meshes\BoxMesh.hpp" />

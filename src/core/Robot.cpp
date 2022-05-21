@@ -16,12 +16,11 @@ using namespace std;
 * Unify naming conventions, camelCase vs snake_case
 * Do something with constants, maybe separate file?
 * Think about the naming convention of matrices: to vs from as left or right multiply
-* Make the plane be drawn using shaders for more efficiency
+* Draw the plane using shaders for more efficiency
 * Create a Scene class to have lights and stuff, then update it with dt to have the light move with const speed
 * Simplify jacobian calculation
-* Use ImGui for UI
 * Make prismatic joints possible?
-* Maybe have a toggle for drawing a wireframe-ball around the robot, visualizing it's range
+* Maybe have a toggle for drawing a wireframe-ball around the robot, visualizing its range
 * Switch to quternions for trajectories to really work (interpolating orientation)
 * Make joints have an acceleration profile like in the lecture slides
 * Dynamics???
@@ -50,25 +49,24 @@ void Robot::createLinks(const std::vector<DhParam>& dh_params)
 {
 	int link_index = 0;
 	for (const DhParam& link_params : dh_params) {
-		cout << "Parameters for link " << link_index << ":" << endl;
-		cout << "	length: " << link_params.a << endl;
-		cout << "	twist: " << link_params.alpha << endl;
-		cout << "	offset: " << link_params.d << endl;
-		cout << "	rotation: " << 0 << endl;
+		cout << "Parameters for link " << link_index << ":" << endl
+			 << "	length: " << link_params.a << endl
+			 << "	twist: " << link_params.alpha << endl
+			 << "	offset: " << link_params.d << endl
+			 << "	rotation: " << 0 << endl;
 
 		JointedLink link(link_params, 0.0f, link_index);
 		links_.push_back(link);
 		link_index++;
 	}
-	cout << "Created " << links_.size() << " links" << endl << endl;
-	cout << "Manipulator Jacobian when joint angles are zero: " << endl;
-	cout << getJacobian() << endl;
+	cout << "Created " << links_.size() << " links" << endl << endl
+		 << "Manipulator Jacobian when joint angles are zero: " << endl
+		 << getJacobian() << endl;
 }
 
 void Robot::update(float dt)
 {
-	// in rad/s
-	const float JOINT_SPEED = M_PI / 5;
+	const float JOINT_SPEED = M_PI / 5;		// in rad/s
 
 	// chain the link transformations like so:
 	// for link 0 the result should be W_T_0 (which is W_T_B * B_T_0)
@@ -79,21 +77,6 @@ void Robot::update(float dt)
 	Affine3f current_to_world = worldToBase_;
 
 	for (JointedLink& link : links_) {
-		float target = link.getJointTargetRotation();
-		float current = link.getJointRotation();
-
-		float diff = current - target;
-
-		const float JOINT_POSITIONAL_ACCURACY = 0.005f;
-		// determintes whether joint should move
-		// TODO: create a joint controller class for doing this?
-		// or maybe move this inside the JointedLink class
-		if (abs(diff) > JOINT_POSITIONAL_ACCURACY) {
-			link.setJointSpeed(current < target ? JOINT_SPEED : -JOINT_SPEED);
-		} else {
-			link.setJointSpeed(0);
-		}
-
 		link.update(dt, current_to_world);
 		current_to_world = current_to_world * link.getLinkMatrix();
 	}
@@ -233,6 +216,14 @@ void Robot::setJointTargetAngles(VectorXf angles) {
 void Robot::setJointTargetAngle(unsigned index, float angle)
 {
 	links_[index].setJointTargetRotation(angle);
+}
+
+void Robot::setJointControllerPidGains(float p, float i, float d)
+{
+	for (JointedLink& link : links_)
+	{
+		link.setControllerGains(p, i, d);
+	}
 }
 
 void Robot::renderSkeleton() const

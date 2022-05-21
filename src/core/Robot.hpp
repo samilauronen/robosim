@@ -37,6 +37,8 @@ public:
 	void					setJointTargetAngles(Eigen::VectorXf angles);
 	void					setJointTargetAngle(unsigned index, float angle);
 
+	void					setJointControllerPidGains(float p, float i, float d);
+
 	void					renderSkeleton() const;
 	std::vector<Vertex>		getMeshVertices() const;
 
@@ -61,7 +63,7 @@ public:
 private:
 	Eigen::Affine3f	worldToBase_;
 
-	void					createLinks(const std::vector<DhParam>& params);
+	void createLinks(const std::vector<DhParam>& params);
 
 	std::vector<JointedLink> links_;
 	Eigen::Vector3f ik_target_;

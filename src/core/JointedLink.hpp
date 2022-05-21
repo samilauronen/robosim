@@ -10,6 +10,7 @@
 
 #include "DhParam.hpp"
 #include "meshes/JointedLinkMesh.hpp"
+#include <core/PidController.hpp>
 
 // describes a combination of a joint and a link
 class JointedLink {
@@ -30,6 +31,7 @@ public:
 	void setJointRotation(float rotation_angle) { rotation_ = rotation_angle; };
 	void setJointSpeed(float new_speed) { joint_speed_ = new_speed; };
 	void setJointTargetRotation(float target_angle) { target_rotation_ = target_angle; };
+	void setControllerGains(float p, float i, float d) { controller_.setGains(p, i, d); };
 
 	// matching getters
 	DhParam getDhParams() const { return params_; };
@@ -50,15 +52,16 @@ private:
 	void updateMesh();
 	void recreateMesh();
 
-	DhParam params_;		// DH parameters of this link
+	DhParam params_;			// DH parameters of this link
 
-	int link_number_;		// the ordinal number of this link in the robot arm's link chain, starting from base
+	int link_number_;			// the ordinal number of this link in the robot arm's link chain, starting from base
 
 	JointedLinkMesh mesh_;		// mesh used for graphical representation
+	PidController controller_;	// controls the joint
 
-	float joint_speed_;     // current speed of the joint in rad/s
-	float rotation_;		// rotation angle of the joint moving this link
-	float target_rotation_;	// target rotation for the joint, current rotation will move towards this when update() is called
+	float joint_speed_;			// current speed of the joint in rad/s
+	float rotation_;			// rotation angle of the joint
+	float target_rotation_;		// target rotation for the joint, current rotation will move towards this when update() is called
 
 	// combination of applying z_screw and then x_screw
 	// relates this link's frame to the frame of the previous link

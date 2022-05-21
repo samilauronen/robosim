@@ -11,25 +11,29 @@ JointedLink::JointedLink(DhParam params, float joint_rotation, int link_number) 
 	rotation_(joint_rotation),
 	target_rotation_(joint_rotation),
 	link_number_(link_number),
-	joint_speed_(0),
-	to_world_(Affine3f::Identity())
+	joint_speed_(M_PI / 5),
+	to_world_(Affine3f::Identity()),
+	controller_(0.05, 0.00, 0.001)
 {
 	this->updateLinkMatrix(rotation_);
 }
 
 void JointedLink::update(float dt, Affine3f current_world_transform)
 {
-	rotation_ += joint_speed_ * dt;
+	float control_signal = controller_.update(target_rotation_ - rotation_, dt);
+	rotation_ += control_signal;
 	updateLinkMatrix(rotation_);
 	setToWorld(current_world_transform * link_matrix_);
 	updateMesh();
 }
 
-void JointedLink::updateLinkMatrix(float rotationAngle) {
+void JointedLink::updateLinkMatrix(float rotationAngle)
+{
 	link_matrix_ = this->evalLinkMatrix(rotationAngle);
 }
 
-void JointedLink::updateMesh() {
+void JointedLink::updateMesh()
+{
 	// the mesh is oriented using the joint's world transform
 	Affine3f joint_to_world = to_world_ * link_matrix_.inverse();
 
@@ -48,7 +52,8 @@ void JointedLink::updateMesh() {
 	mesh_.setToWorldTransform(transformation);
 }
 
-void JointedLink::recreateMesh() {
+void JointedLink::recreateMesh()
+{
 	mesh_ = JointedLinkMesh(params_.d, params_.a, link_number_);
 }
 
@@ -104,6 +109,7 @@ void JointedLink::renderSkeleton() const
 	glEnd();
 }
 
-std::vector<Vertex> JointedLink::getMeshVertices() const {
+std::vector<Vertex> JointedLink::getMeshVertices() const
+{
 	return mesh_.getVertices();
 }

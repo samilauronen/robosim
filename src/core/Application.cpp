@@ -221,11 +221,18 @@ void Application::run(void) {
 			}
 			End();
 
+			Begin("Joint PID controller gains:");
+			float p, i, d = 0;
+			SliderFloat("P", &p, 0, 0.1);
+			SliderFloat("I", &i, 0, 0.05);
+			SliderFloat("D", &d, 0, 0.05);
+			robot_->setJointControllerPidGains(p, i, d);
+			End();
+
 			Begin("TCP info");
 			Vector3f tcp_pos = robot_->getTcpWorldPosition();
 			Vector3f tcp_target = robot_->getTargetTcpPosition();
 			VectorXf tcp_speed = robot_->getTcpSpeed();
-
 			Columns(2);
 			Text("TCP position:");
 			NextColumn();
@@ -241,7 +248,6 @@ void Application::run(void) {
 			NextColumn();
 			Text("x: % 2.2f, y: % 2.2f, z: % 2.2f\nrx: % 2.2f, ry: % 2.2f, rz: % 2.2f",
 				tcp_speed[0], tcp_speed[1], tcp_speed[2], tcp_speed[3], tcp_speed[4], tcp_speed[5]);
-
 			End();
 
 			Begin("Parameter editor");
