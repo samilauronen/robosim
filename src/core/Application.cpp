@@ -12,6 +12,7 @@
 #include "Application.hpp"
 #include "Utility.hpp"
 #include "meshes/BoxMesh.hpp"
+#include "meshes/SphereMesh.hpp"
 
 using namespace Eigen;
 
@@ -504,6 +505,12 @@ void Application::render(void) {
 		}
 		vertices.insert(vertices.end(), planeVerts.begin(), planeVerts.end());
 
+		SphereMesh sphere(0.2f, { 0.0, 0.5, 0 });
+		Affine3f t = AngleAxisf::Identity() * Translation3f(0, 0.2, 0);
+		sphere.setToWorldTransform(t);
+		std::vector<Vertex> sphere_verts = sphere.getVertices();
+		vertices.insert(vertices.end(), sphere_verts.begin(), sphere_verts.end());
+
 		checkGlErrors();
 
 		glBindBuffer(GL_ARRAY_BUFFER, gl_.simple_vertex_buffer);
@@ -526,14 +533,13 @@ void Application::render(void) {
 		glUniformMatrix4fv(gl_.view, 1, GL_FALSE, C.data());
 		glUniformMatrix4fv(gl_.projection, 1, GL_FALSE, P.data());
 
-		
-
 		glUniform3f(gl_.lightPos, lightpos.x(), lightpos.y(), lightpos.z());
 		glUniform3f(gl_.viewPos, viewpos.x(), viewpos.y(), viewpos.z());
 		glUniform3f(gl_.lightColor, 1, 1, 1);
 
 		glBindVertexArray(gl_.simple_vao);
 		glDrawArrays(GL_TRIANGLES, 0, (int)vertices.size());
+
 
 		checkGlErrors();
 
@@ -571,5 +577,3 @@ void Application::render(void) {
 
 	//common_ctrl_.message(ss.str().c_str(), "info");
 }
-
-

@@ -179,6 +179,7 @@
     <ClCompile Include="src\meshes\CylinderMesh.cpp" />
     <ClCompile Include="src\meshes\JointedLinkMesh.cpp" />
     <ClCompile Include="src\meshes\Mesh.cpp" />
+    <ClCompile Include="src\meshes\SphereMesh.cpp" />
     <ClCompile Include="src\rendering\Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -202,6 +203,7 @@
     <ClInclude Include="src\core\Utility.hpp" />
     <ClInclude Include="src\meshes\BoxMesh.hpp" />
     <ClInclude Include="src\meshes\CylinderMesh.hpp" />
+    <ClInclude Include="src\meshes\SphereMesh.hpp" />
     <ClInclude Include="src\meshes\JointedLinkMesh.hpp" />
     <ClInclude Include="src\meshes\Mesh.hpp" />
     <ClInclude Include="src\rendering\Camera.hpp" />
