@@ -206,6 +206,7 @@ VectorXf Robot::getTargetJointAngles() const
 	}
 	return angles;
 }
+
 void Robot::setJointTargetAngles(VectorXf angles) {
 	assert(angles.rows() == getNumJoints());
 	for (int i = 0; i < angles.rows(); i++) {

@@ -218,16 +218,20 @@ void Application::run(void) {
 				Text("joint %d", i);
 				SameLine();
 				SliderAngle("", &joint_angle_controls_[i]);
+				// user manually grabbing a slider aborts the running IK solution
+				if (ImGui::IsItemActive() && running_ik_solution_)
+				{
+					abortRunningIkSolution();
+				}
 				PopID();
 			}
 			End();
 
 			Begin("Joint PID controller gains:");
-			float p, i, d = 0;
-			SliderFloat("P", &p, 0, 0.1);
-			SliderFloat("I", &i, 0, 0.05);
-			SliderFloat("D", &d, 0, 0.05);
-			robot_->setJointControllerPidGains(p, i, d);
+			SliderFloat("P", &pid_p, 0, 0.1);
+			SliderFloat("I", &pid_i, 0, 0.05);
+			SliderFloat("D", &pid_d, 0, 0.05);
+			robot_->setJointControllerPidGains(pid_p, pid_i, pid_d);
 			End();
 
 			Begin("TCP info");
@@ -311,9 +315,29 @@ void Application::run(void) {
 }
 
 void Application::update(float dt) {
-	applyJointControls();
+
 	if (glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+	{
 		setIkTarget();
+		running_ik_solution_ = true;
+	}
+
+	if (running_ik_solution_)
+	{
+		updateJointControlSliders();
+		// check if the robot reached the IK target already
+		bool finished = (robot_->getJointAngles() - robot_->getTargetJointAngles()).norm() < 0.01;
+		if (finished)
+		{
+			running_ik_solution_ = false;
+		}
+	}
+	else
+	{
+		applyJointControls();
+	}
+
+		
 	camera_.update(dt, window_);
 	robot_->update(dt);
 }
@@ -351,6 +375,20 @@ void Application::setIkTarget() {
 	ray_end_ = position + ray_vec * t;
 
 	robot_->setTargetTcpPosition(ray_end_);
+}
+
+void Application::abortRunningIkSolution() {
+	// set robot target to its current angles
+	robot_->setJointTargetAngles(robot_->getJointAngles());
+	// return joint control to the sliders
+	running_ik_solution_ = false;
+}
+
+void Application::updateJointControlSliders() {
+	// set the joint slider values to actual joint angles
+	for (int i = 0; i < joint_angle_controls_.size(); i++) {
+		joint_angle_controls_[i] = robot_->getJointAngle(i);
+	}
 }
 
 void Application::applyJointControls() {
@@ -408,7 +446,7 @@ void Application::render(void) {
 	std::vector<Vertex> lightverts = lightmesh.getVertices();
 	vertices.insert(vertices.end(), lightverts.begin(), lightverts.end());
 
-	BoxMesh ikmesh = BoxMesh(0.01, 0.01, 0.01, Vector3f(1, 0.2, 0.2));
+	SphereMesh ikmesh = SphereMesh(0.01, Vector3f(1, 0.2, 0.2));
 	ikmesh.transform(Translation3f(ray_end_) * AngleAxisf::Identity());
 	std::vector<Vertex> ikverts = ikmesh.getVertices();
 	vertices.insert(vertices.end(), ikverts.begin(), ikverts.end());

@@ -12,7 +12,7 @@
 namespace IK {
 
 const float DISTANCE_THRESHOLD = 0.0001f;
-const float	TIMEOUT_MICROS = 100000;
+const float	TIMEOUT_MICROS = 1000;
 
 // represents a solution to the inverse kinematics problem
 // if timed_out = true, then the target is unreachable

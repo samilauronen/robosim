@@ -43,6 +43,8 @@ public:
 	void			render(void);
 	void			update(float dt);
 	void			applyJointControls();
+	void			updateJointControlSliders();
+	void			abortRunningIkSolution();
 	void			setIkTarget();
 
 private:
@@ -60,7 +62,11 @@ private:
 
 	uint64_t time_end_;
 	float temp = 0;
-	bool ik_ = true;
+	bool running_ik_solution_ = false;
+
+	float pid_p = 0.035;
+	float pid_i = 0;
+	float pid_d = 0;
 
 	glGeneratedIndices	gl_;
 
