@@ -76,39 +76,6 @@ Affine3f JointedLink::evalLinkMatrix(float rotationAngle) const
 	return z_screw * x_screw;
 }
 
-// uses immediate mode to draw a simple "skeleton" model of the joint-link combination
-void JointedLink::renderSkeleton() const
-{
-	Vector3f current_world_pos, parent_world_pos, after_z_screw;
-	Affine3f parent_transform = to_world_ * link_matrix_.inverse();
-	parent_world_pos = parent_transform.translation();
-	current_world_pos = to_world_.translation();
-	after_z_screw = parent_transform * Vector3f(0, 0, params_.d);	// moving by offset towards prev frame's z
-	float z_screw_len = (after_z_screw - parent_world_pos).norm();
-	float x_screw_len = (current_world_pos - after_z_screw).norm();
-
-	// draw a point at the origin of the previous frame
-	glBegin(GL_POINTS);
-	glColor3f(1.0f, 1.0f, 1.0f);
-	glVertex3f(parent_world_pos.x(), parent_world_pos.y(), parent_world_pos.z());
-	glEnd();
-
-	// draw coordinate axes of the frame
-	glLineWidth(1);
-	float scale = 0.075;
-	drawFrame(parent_transform, scale);
-
-	// draw link lines
-	glLineWidth(1);
-	glBegin(GL_LINES);
-	glColor3f(1, 1, 1);
-	glVertex3f(parent_world_pos.x(), parent_world_pos.y(), parent_world_pos.z());
-	glVertex3f(after_z_screw.x(), after_z_screw.y(), after_z_screw.z());
-	glVertex3f(after_z_screw.x(), after_z_screw.y(), after_z_screw.z());
-	glVertex3f(current_world_pos.x(), current_world_pos.y(), current_world_pos.z());
-	glEnd();
-}
-
 std::vector<Vertex> JointedLink::getMeshVertices() const
 {
 	return mesh_.getVertices();

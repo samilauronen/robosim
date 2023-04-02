@@ -226,13 +226,6 @@ void Robot::setJointControllerPidGains(float p, float i, float d)
 	}
 }
 
-void Robot::renderSkeleton() const
-{
-	for (const JointedLink& link : links_) {
-		link.renderSkeleton();
-	}
-}
-
 std::vector<Vertex> Robot::getMeshVertices() const
 {
 	std::vector<Vertex> all_vertices;

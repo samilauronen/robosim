@@ -39,7 +39,6 @@ public:
 
 	void					setJointControllerPidGains(float p, float i, float d);
 
-	void					renderSkeleton() const;
 	std::vector<Vertex>		getMeshVertices() const;
 
 	size_t					getNumJoints() const { return links_.size(); };

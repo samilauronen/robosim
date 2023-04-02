@@ -45,7 +45,6 @@ public:
 
 	// returns the vertices of the mesh that represents the combination of a joint and a link
 	std::vector<Vertex> getMeshVertices() const;
-	void renderSkeleton() const;
 
 private:
 	void updateLinkMatrix(float rotationAngle);

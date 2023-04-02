@@ -14,8 +14,7 @@ class Application
 private:
 	enum class DrawMode
 	{
-		MODE_SKELETON,
-		MODE_MESH_CPU,
+		MODE_MESH,
 		MODE_MESH_WIREFRAME
 	};
 

@@ -30,7 +30,7 @@ namespace {
 }
 
 Application::Application():
-	drawmode_(DrawMode::MODE_MESH_CPU),
+	drawmode_(DrawMode::MODE_MESH),
 	shading_toggle_(false),
 	shading_mode_changed_(false),
 	camera_(Vector3f(0.0f, 0.0f, 1.5f))
@@ -394,169 +394,110 @@ void Application::render(void) {
 	P.col(2) = Vector4f(0, 0, (fFar + fNear) / (fFar - fNear), 1);
 	P.col(3) = Vector4f(0, 0, -2 * fFar * fNear / (fFar - fNear), 0);
 
-	if (drawmode_ == DrawMode::MODE_SKELETON) {
-		// Draw the skeleton as a set of joint positions, connecting lines,
-		// and local coordinate systems at each joint.
-		// Here we'll use old style (immediate mode) OpenGL as opposed to
-		// modern GL where we always first load the data to a GPU buffer.
-		// Immediate mode is convenient when we want to draw a small amount
-		// of things without having to write much code, and performance is
-		// not an issue: for instance, when you want to want to draw something
-		// for debugging.
 
-		// NOTE: all of this immediate mode shite doesn't work at all with modern opengl
-		glUseProgram(0);
-
-		checkGlErrors();
-
-		glMatrixMode(GL_PROJECTION);
-
-		checkGlErrors();
-
-		glLoadMatrixf(P.data());
-
-		
-
-		glMatrixMode(GL_MODELVIEW);
-		glLoadMatrixf(C.data());
-
-		checkGlErrors();
-
-		glEnable(GL_POINT_SMOOTH);
-		glPointSize(15);
-
-		checkGlErrors();
-
-		// draw world origin frame:
-		glLineWidth(2);
-		float scale = 0.3;
-		drawFrame(Eigen::Affine3f::Identity(), scale);
-
-		checkGlErrors();
-
-		// draw ray from camera
-		glLineWidth(2);
-		glBegin(GL_LINES);
-		glColor3f(1, 0, 0); // red
-		glVertex3f(ray_start_.x(), ray_start_.y(), ray_start_.z());
-		glVertex3f(ray_end_.x(), ray_end_.y(), ray_end_.z());
-		glEnd();
-		glPointSize(20);
-		glBegin(GL_POINTS);
-		glColor3f(0, 0, 1); // blue
-		glVertex3f(ray_end_.x(), ray_end_.y(), ray_end_.z());
-		glEnd();
-
-		checkGlErrors();
-
-		robot_->renderSkeleton();
+	if (drawmode_ == DrawMode::MODE_MESH_WIREFRAME) {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
-	else // mesh mode
-	{
-		if (drawmode_ == DrawMode::MODE_MESH_WIREFRAME) {
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	std::vector<Vertex> vertices = robot_->getMeshVertices();
+
+	temp += 0.0001;
+	Vector3f lightpos = Vector3f(6 * sin(temp), 3.5, 6 * cos(temp));
+	BoxMesh lightmesh = BoxMesh(0.2, 0.2, 0.2, Vector3f(1, 1, 1));
+	lightmesh.transform(Translation3f(lightpos) * AngleAxisf::Identity());
+	std::vector<Vertex> lightverts = lightmesh.getVertices();
+	vertices.insert(vertices.end(), lightverts.begin(), lightverts.end());
+
+	BoxMesh ikmesh = BoxMesh(0.01, 0.01, 0.01, Vector3f(1, 0.2, 0.2));
+	ikmesh.transform(Translation3f(ray_end_) * AngleAxisf::Identity());
+	std::vector<Vertex> ikverts = ikmesh.getVertices();
+	vertices.insert(vertices.end(), ikverts.begin(), ikverts.end());
+
+	float square_size = 0.2;
+	float grid_size = 50;
+
+	std::vector<Vertex> planeVerts;
+
+	for (int i = 0; i < grid_size; i++) {
+		for (int j = 0; j < grid_size; j++) {
+			Vector3f color = (i + j) % 2 == 0 ? Vector3f(0.8, 0.8, 0.8) : Vector3f(0.3, 0.3, 0.3);
+
+			// left triangle
+			Vertex p1, p2, p3;
+			p1.position = Vector3f(i * square_size, 0, j * square_size);
+			p2.position = Vector3f(i * square_size, 0, (j + 1) * square_size);
+			p3.position = Vector3f((i + 1) * square_size, 0, j * square_size);
+
+			p1.normal = p2.normal = p3.normal = Vector3f(0, 1, 0);
+			p1.color = p2.color = p3.color = color;
+			planeVerts.insert(planeVerts.end(), { p1,p2,p3 });
+
+			// right triangle
+			p1.position = Vector3f(i * square_size, 0, (j + 1) * square_size);
+			p2.position = Vector3f((i + 1) * square_size, 0, (j + 1) * square_size);
+			p3.position = Vector3f((i + 1) * square_size, 0, j * square_size);
+
+			p1.normal = p2.normal = p3.normal = Vector3f(0, 1, 0);
+			p1.color = p2.color = p3.color = color;
+			planeVerts.insert(planeVerts.end(), { p1,p2,p3 });
 		}
-
-		std::vector<Vertex> vertices = robot_->getMeshVertices();
-
-		temp += 0.0001;
-		Vector3f lightpos = Vector3f(6 * sin(temp), 3.5, 6 * cos(temp));
-		BoxMesh lightmesh = BoxMesh(0.2, 0.2, 0.2, Vector3f(1, 1, 1));
-		lightmesh.transform(Translation3f(lightpos) * AngleAxisf::Identity());
-		std::vector<Vertex> lightverts = lightmesh.getVertices();
-		vertices.insert(vertices.end(), lightverts.begin(), lightverts.end());
-
-		BoxMesh ikmesh = BoxMesh(0.01, 0.01, 0.01, Vector3f(1, 0.2, 0.2));
-		ikmesh.transform(Translation3f(ray_end_) * AngleAxisf::Identity());
-		std::vector<Vertex> ikverts = ikmesh.getVertices();
-		vertices.insert(vertices.end(), ikverts.begin(), ikverts.end());
-
-		float square_size = 0.2;
-		float grid_size = 50;
-
-		std::vector<Vertex> planeVerts;
-
-		for (int i = 0; i < grid_size; i++) {
-			for (int j = 0; j < grid_size; j++) {
-				Vector3f color = (i + j) % 2 == 0 ? Vector3f(0.8, 0.8, 0.8) : Vector3f(0.3, 0.3, 0.3);
-
-				// left triangle
-				Vertex p1, p2, p3;
-				p1.position = Vector3f(i * square_size, 0, j * square_size);
-				p2.position = Vector3f(i * square_size, 0, (j + 1) * square_size);
-				p3.position = Vector3f((i + 1) * square_size, 0, j * square_size);
-
-				p1.normal = p2.normal = p3.normal = Vector3f(0, 1, 0);
-				p1.color = p2.color = p3.color = color;
-				planeVerts.insert(planeVerts.end(), { p1,p2,p3 });
-
-				// right triangle
-				p1.position = Vector3f(i * square_size, 0, (j + 1) * square_size);
-				p2.position = Vector3f((i + 1) * square_size, 0, (j + 1) * square_size);
-				p3.position = Vector3f((i + 1) * square_size, 0, j * square_size);
-
-				p1.normal = p2.normal = p3.normal = Vector3f(0, 1, 0);
-				p1.color = p2.color = p3.color = color;
-				planeVerts.insert(planeVerts.end(), { p1,p2,p3 });
-			}
-		}
-		for (Vertex& v : planeVerts) {
-			v.position -= Vector3f(grid_size * square_size / 2, 0, grid_size * square_size / 2);
-		}
-		vertices.insert(vertices.end(), planeVerts.begin(), planeVerts.end());
-
-		SphereMesh sphere(0.2f, { 0.0, 0.5, 0 });
-		Affine3f t = AngleAxisf::Identity() * Translation3f(0, 0.2, 0);
-		sphere.setToWorldTransform(t);
-		std::vector<Vertex> sphere_verts = sphere.getVertices();
-		vertices.insert(vertices.end(), sphere_verts.begin(), sphere_verts.end());
-
-		checkGlErrors();
-
-		glBindBuffer(GL_ARRAY_BUFFER, gl_.simple_vertex_buffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glUseProgram(gl_.simple_shader);
-
-		gl_.model = glGetUniformLocation(gl_.simple_shader, "model");
-		gl_.view = glGetUniformLocation(gl_.simple_shader, "view");
-		gl_.projection = glGetUniformLocation(gl_.simple_shader, "projection");
-		gl_.lightPos = glGetUniformLocation(gl_.simple_shader, "lightPos");
-		gl_.viewPos = glGetUniformLocation(gl_.simple_shader, "viewPos");
-		gl_.lightColor = glGetUniformLocation(gl_.simple_shader, "lightColor");
-		gl_.objectColor = glGetUniformLocation(gl_.simple_shader, "objectColor");
-
-		Matrix4f model = Matrix4f::Identity();
-		Vector3f viewpos = camera_.getPosition();
-
-		glUniformMatrix4fv(gl_.model, 1, GL_FALSE, model.data());
-		glUniformMatrix4fv(gl_.view, 1, GL_FALSE, C.data());
-		glUniformMatrix4fv(gl_.projection, 1, GL_FALSE, P.data());
-
-		glUniform3f(gl_.lightPos, lightpos.x(), lightpos.y(), lightpos.z());
-		glUniform3f(gl_.viewPos, viewpos.x(), viewpos.y(), viewpos.z());
-		glUniform3f(gl_.lightColor, 1, 1, 1);
-
-		glBindVertexArray(gl_.simple_vao);
-		glDrawArrays(GL_TRIANGLES, 0, (int)vertices.size());
-
-
-		checkGlErrors();
-
-		// draw ik target
-		//glPointSize(20);
-		//glBegin(GL_POINTS);
-		//glColor3f(0, 0, 1); // blue
-		//glVertex3f(ray_end_.x(), ray_end_.y(), ray_end_.z());
-		//glEnd();
-
-		if (drawmode_ == DrawMode::MODE_MESH_WIREFRAME) {
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		}
-
-		glBindVertexArray(0);
-		glUseProgram(0);
 	}
+	for (Vertex& v : planeVerts) {
+		v.position -= Vector3f(grid_size * square_size / 2, 0, grid_size * square_size / 2);
+	}
+	vertices.insert(vertices.end(), planeVerts.begin(), planeVerts.end());
+
+	SphereMesh sphere(0.2f, { 0.0, 0.5, 0 });
+	Affine3f t = AngleAxisf::Identity() * Translation3f(0, 0.2, 0);
+	sphere.setToWorldTransform(t);
+	std::vector<Vertex> sphere_verts = sphere.getVertices();
+	vertices.insert(vertices.end(), sphere_verts.begin(), sphere_verts.end());
+
+	checkGlErrors();
+
+	glBindBuffer(GL_ARRAY_BUFFER, gl_.simple_vertex_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(gl_.simple_shader);
+
+	gl_.model = glGetUniformLocation(gl_.simple_shader, "model");
+	gl_.view = glGetUniformLocation(gl_.simple_shader, "view");
+	gl_.projection = glGetUniformLocation(gl_.simple_shader, "projection");
+	gl_.lightPos = glGetUniformLocation(gl_.simple_shader, "lightPos");
+	gl_.viewPos = glGetUniformLocation(gl_.simple_shader, "viewPos");
+	gl_.lightColor = glGetUniformLocation(gl_.simple_shader, "lightColor");
+	gl_.objectColor = glGetUniformLocation(gl_.simple_shader, "objectColor");
+
+	Matrix4f model = Matrix4f::Identity();
+	Vector3f viewpos = camera_.getPosition();
+
+	glUniformMatrix4fv(gl_.model, 1, GL_FALSE, model.data());
+	glUniformMatrix4fv(gl_.view, 1, GL_FALSE, C.data());
+	glUniformMatrix4fv(gl_.projection, 1, GL_FALSE, P.data());
+
+	glUniform3f(gl_.lightPos, lightpos.x(), lightpos.y(), lightpos.z());
+	glUniform3f(gl_.viewPos, viewpos.x(), viewpos.y(), viewpos.z());
+	glUniform3f(gl_.lightColor, 1, 1, 1);
+
+	glBindVertexArray(gl_.simple_vao);
+	glDrawArrays(GL_TRIANGLES, 0, (int)vertices.size());
+
+
+	checkGlErrors();
+
+	// draw ik target
+	//glPointSize(20);
+	//glBegin(GL_POINTS);
+	//glColor3f(0, 0, 1); // blue
+	//glVertex3f(ray_end_.x(), ray_end_.y(), ray_end_.z());
+	//glEnd();
+
+	if (drawmode_ == DrawMode::MODE_MESH_WIREFRAME) {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+
+	glBindVertexArray(0);
+	glUseProgram(0);
 
 	// GUI rendering:
 	ImGui::Render();
