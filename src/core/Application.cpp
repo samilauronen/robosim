@@ -153,17 +153,10 @@ void Application::initRendering()
 	glGenVertexArrays(1, &gl_.simple_vao);
 	glGenBuffers(1, &gl_.simple_vertex_buffer);
 
-	// Point and line rendering setup
-	glGenVertexArrays(1, &gl_.point_vao);
-	glBindVertexArray(gl_.point_vao);
-	glEnableVertexAttribArray(ATTRIB_POSITION);
-	glVertexAttribPointer(ATTRIB_POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Eigen::Vector3f), (GLvoid*)0);
-	glBindVertexArray(0);
-
 	// Check for OpenGL errors.
 	checkGlErrors();
 
-	// Set up vertex attribute object for doing SSD on the CPU. The data will be loaded and re-loaded later, on each frame.
+	// Set up vertex attribute object
 	glBindVertexArray(gl_.simple_vao);
 	glBindBuffer(GL_ARRAY_BUFFER, gl_.simple_vertex_buffer);
 	glEnableVertexAttribArray(ATTRIB_POSITION);
@@ -359,11 +352,13 @@ void Application::setIkTarget() {
 	Vector2d mouse_pos;
 	int window_width, window_height;
 	glfwGetCursorPos(window_, &mouse_pos.x(), &mouse_pos.y());
-	glfwGetWindowSize(window_, &window_width, &window_height);
+	glfwGetFramebufferSize(window_, &window_width, &window_height);
 	float x = mouse_pos.x() / window_width;
 	float y = mouse_pos.y() / window_height;
 	x = x * 2 - 1;
-	y = -(y * 2 - 1);
+
+	// TODO: fix this, should not need to be divided by this magic number, and doesn't work with different window sizes
+	y = -(y * 2 - 1) / 1.875; 
 
 	// grab camera attributes
 	float fov = camera_.getFOV() * M_PI / 180; // damn thing was in degrees!
@@ -378,7 +373,7 @@ void Application::setIkTarget() {
 	// create ray
 	Vector3f x_vec = x * horizontal.normalized();
 	Vector3f y_vec = y * up.normalized();
-	Vector3f dist_vec = dist * direction;
+	Vector3f dist_vec = dist * direction.normalized();
 	Vector3f ray_vec = (dist_vec + x_vec + y_vec).normalized();
 
 	// ray should ge going from [position] towards [ray_vec]
@@ -511,14 +506,6 @@ void Application::render(void) {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(gl_.simple_shader);
 
-	gl_.model = glGetUniformLocation(gl_.simple_shader, "model");
-	gl_.view = glGetUniformLocation(gl_.simple_shader, "view");
-	gl_.projection = glGetUniformLocation(gl_.simple_shader, "projection");
-	gl_.lightPos = glGetUniformLocation(gl_.simple_shader, "lightPos");
-	gl_.viewPos = glGetUniformLocation(gl_.simple_shader, "viewPos");
-	gl_.lightColor = glGetUniformLocation(gl_.simple_shader, "lightColor");
-	gl_.objectColor = glGetUniformLocation(gl_.simple_shader, "objectColor");
-
 	Matrix4f model = Matrix4f::Identity();
 	Vector3f viewpos = camera_.getPosition();
 
@@ -536,13 +523,6 @@ void Application::render(void) {
 
 	checkGlErrors();
 
-	// draw ik target
-	//glPointSize(20);
-	//glBegin(GL_POINTS);
-	//glColor3f(0, 0, 1); // blue
-	//glVertex3f(ray_end_.x(), ray_end_.y(), ray_end_.z());
-	//glEnd();
-
 	if (drawmode_ == DrawMode::MODE_MESH_WIREFRAME) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
@@ -556,16 +536,4 @@ void Application::render(void) {
 
 	// Check for OpenGL errors.
 	checkGlErrors();
-
-	// Show status messages.
-	//std::stringstream ss;
-	//Vector3f tcp = rob_->getTcpWorldPosition();
-	//Eigen::VectorXf speeds = rob_->getJointSpeeds();
-	//Eigen::VectorXf tcpSpeed = rob_->getTcpSpeed();
-	//ss << "TCP world position: (" << tcp.x() << ", " << tcp.y() << ", " << tcp.z() << ")" << endl;
-	//ss << "Joint speeds: " << speeds(0) << ", " << speeds(1) << endl;
-	//ss << "TCP speed: " << tcpSpeed(0) << ", " << tcpSpeed(1) << ", " << tcpSpeed(2) << " Angular: " << tcpSpeed(3) << ", " << tcpSpeed(4) << ", " << tcpSpeed(5) << endl;
-	//ss << endl;
-
-	//common_ctrl_.message(ss.str().c_str(), "info");
 }

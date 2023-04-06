@@ -12,7 +12,7 @@ JointedLinkMesh::JointedLinkMesh(float z_len, float x_len, int link_number):
 	Mesh()
 {
 	float init_link_thickness = 0.1f;
-	float init_joint_radius = 0.07f;
+	float init_joint_radius = sqrt(2*(init_link_thickness / 2)* (init_link_thickness / 2)) + 0.001;
 	float init_joint_length = 0.2f;
 	float size_reduction_factor = 0.8;
 
