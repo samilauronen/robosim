@@ -45,6 +45,7 @@ public:
 	void			applyJointControls();
 	void			updateJointControlSliders();
 	void			abortRunningIkSolution();
+	void			mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 	void			setIkTarget();
 
 private:

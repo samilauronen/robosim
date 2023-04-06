@@ -50,6 +50,12 @@ IKSolution SimpleIKSolver::solve(const Robot& robot, const Vector3f& tcp_target_
 	int time_taken = currentTimeMicros() - start_time;
 	bool timed_out = time_taken >= TIMEOUT_MICROS;
 
+	// normalize the joint angles between -2pi and 2pi
+	for (int i = 0; i < solutionJointAngles.size(); i++)
+	{
+		solutionJointAngles[i] = remainder(solutionJointAngles[i], 2 * M_PI);
+	}
+
 	IKSolution solution;
 	solution.joint_angles = solutionJointAngles;
 	solution.time_taken_micros = time_taken;
@@ -57,7 +63,5 @@ IKSolution SimpleIKSolver::solve(const Robot& robot, const Vector3f& tcp_target_
 
 	return solution;
 }
-
-
 
 } // namespace IK

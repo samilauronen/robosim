@@ -65,6 +65,8 @@ void Application::createWindow(int width, int height) {
 	}
 	glfwMakeContextCurrent(window_);
 
+	glfwSetWindowUserPointer(window_, this);
+
 	// Imgui setup
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -133,6 +135,14 @@ void Application::createWindow(int width, int height) {
 		glfwTerminate();
 		exit(EXIT_FAILURE);
 	}
+
+	// registe callbacks
+	glfwSetMouseButtonCallback(window_,
+		[](GLFWwindow* w, int button, int action, int mods)
+		{
+			static_cast<Application*>(glfwGetWindowUserPointer(w))->mouseButtonCallback(w, button, action, mods);
+		}
+	);
 
 	initRendering();
 }
@@ -314,14 +324,8 @@ void Application::run(void) {
 	glfwTerminate();
 }
 
-void Application::update(float dt) {
-
-	if (glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
-	{
-		setIkTarget();
-		running_ik_solution_ = true;
-	}
-
+void Application::update(float dt)
+{
 	if (running_ik_solution_)
 	{
 		updateJointControlSliders();
@@ -337,9 +341,17 @@ void Application::update(float dt) {
 		applyJointControls();
 	}
 
-		
 	camera_.update(dt, window_);
 	robot_->update(dt);
+}
+
+void Application::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+	{
+		setIkTarget();
+		running_ik_solution_ = true;
+	}
 }
 
 void Application::setIkTarget() {
@@ -375,6 +387,7 @@ void Application::setIkTarget() {
 	ray_end_ = position + ray_vec * t;
 
 	robot_->setTargetTcpPosition(ray_end_);
+	std::cout << "hello" << std::endl;
 }
 
 void Application::abortRunningIkSolution() {
