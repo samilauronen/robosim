@@ -29,7 +29,6 @@ public:
 	void setDhParams(const DhParam& params) { params_ = params; recreateMesh(); };
 	void setToWorld(const Eigen::Affine3f& to_world) { to_world_ = to_world; };
 	void setJointRotation(float rotation_angle) { rotation_ = rotation_angle; };
-	void setJointSpeed(float new_speed) { joint_speed_ = new_speed; };
 	void setJointTargetRotation(float target_angle) { target_rotation_ = target_angle; };
 	void setControllerGains(float p, float i, float d) { controller_.setGains(p, i, d); };
 

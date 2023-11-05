@@ -12,6 +12,8 @@
 
 robosim
 
+imgui.ini
+
 # directories
 .vs
 bin/
