@@ -7,30 +7,44 @@
 using namespace Eigen;
 
 Camera::Camera(
-    const Eigen::Vector3f& position,
-    const Eigen::Vector3f& forward,
+    const Eigen::Vector3f& center, const float radius,
+    const float azimuth, const float polar,
     const Eigen::Vector3f& up, float speed, float mouse_sensitivity
 ):
-    position_(position),
-    forward_(forward),
-    up_(up),
+    center_(center),
+    azimuthAngle_(azimuth),
+    polarAngle_(polar),
     speed_(speed),
+    up_(up),
     mouse_sensitivity_(mouse_sensitivity),
     fov_(70.0f),
     near_(0.001f),
     far_(3.0f),
     dragLeft_(false),
     dragMiddle_(false),
-    dragRight_(false)
+    dragRight_(false),
+    shiftDown_(false),
+    radius_(radius)
 {
+    // Calculate sines / cosines of angles
+    const auto sineAzimuth = sin(azimuthAngle_);
+    const auto cosineAzimuth = cos(azimuthAngle_);
+    const auto sinePolar = sin(polarAngle_);
+    const auto cosinePolar = cos(polarAngle_);
+
+    // Calculate eye position out of them
+    const auto x = center_.x() + radius_ * cosinePolar * cosineAzimuth;
+    const auto y = center_.y() + radius_ * sinePolar;
+    const auto z = center_.z() + radius_ * cosinePolar * sineAzimuth;
+
+    position_ = {x,y,z};
+
+    // calculate forward
+    forward_ = (center_ - position_).normalized();
 }
 
 void Camera::update(float dt, GLFWwindow* window)
 {
-    Matrix3f orient = getOrientation();
-    Vector3f rotate = Vector3f::Zero();
-    Vector3f move = Vector3f::Zero();
-
     // check if mouse is dragged with a button pressed
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)   == GLFW_PRESS)   dragLeft_ = true;
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS)   dragMiddle_ = true;
@@ -40,6 +54,12 @@ void Camera::update(float dt, GLFWwindow* window)
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_RELEASE) dragMiddle_ = false;
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT)  == GLFW_RELEASE) dragRight_ = false;
 
+    // check keyboard button presses and releases
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)    shiftDown_ = true;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)  shiftDown_ = false;
+
+
+
     // calculate mouse delta
     double mouse_x, mouse_y;
     glfwGetCursorPos(window, &mouse_x, &mouse_y);
@@ -47,33 +67,67 @@ void Camera::update(float dt, GLFWwindow* window)
     last_mouse_pos.x() = mouse_x;
     last_mouse_pos.y() = mouse_y;
 
-    // increment rotation
-    if (dragMiddle_) rotate += delta * mouse_sensitivity_;
+    // movement
+    if (dragMiddle_)
+    {
+        if (shiftDown_)
+        {
+            // move center of rotation
+        }
+        else
+        {
+            // rotate azimuth by mouse delta in that direction
+            azimuthAngle_ += mouse_sensitivity_ * delta.x();
+
+            // Keep azimuth angle within range <0..2PI) - it's not necessary, just to have it nicely output
+            const auto fullCircle = 2.0f * M_PI;
+            azimuthAngle_ = fmodf(azimuthAngle_, fullCircle);
+            if (azimuthAngle_ < 0.0f)
+            {
+                azimuthAngle_ = fullCircle + azimuthAngle_;
+            }
+
+            polarAngle_ -= mouse_sensitivity_ * delta.y();
+
+            // Check if the angle hasn't exceeded quarter of a circle to prevent flip, add a bit of epsilon like 0.001 radians
+            const auto polarCap = M_PI / 2.0f - 0.001f;
+            if (polarAngle_ > polarCap) {
+                polarAngle_ = polarCap;
+            }
+
+            if (polarAngle_ < -polarCap) {
+                polarAngle_ = -polarCap;
+            }
+
+        }
+    }
 
     // check movement keys and set movement vector
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) move.x() -= 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) move.x() += 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) move.y() -= 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) move.y() += 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) move.z() -= 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) move.z() += 1.0f;
-    move *= dt * speed_;
+    // if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) move.x() -= 1.0f;
+    // if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) move.x() += 1.0f;
+    // if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) move.y() -= 1.0f;
+    // if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) move.y() += 1.0f;
+    // if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) move.z() -= 1.0f;
+    // if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) move.z() += 1.0f;
 
-    // apply movement and rotation
-    if (!move.isZero()) {
-        position_ += orient * move;
-    }
-    if (rotate.x() != 0.0f || rotate.y() != 0.0f)
-    {
-        Vector3f tmp = orient.col(2) * cos(rotate.x()) - orient.col(0) * sin(rotate.x());
-        forward_ = (orient.col(1) * sin(rotate.y()) - tmp * cos(rotate.y())).normalized();
-        up_ = (orient.col(1) * cos(rotate.y()) + tmp * sin(rotate.y())).normalized();
-    }
-    if (rotate.z() != 0.0f)
-    {
-        Vector3f up = orient.transpose() * up_;
-        up_ = orient * Vector3f(up.x() * cos(rotate.z()) - sin(rotate.z()), up.x() * sin(rotate.z()) + up.y() * cos(rotate.z()), up.z());
-    }
+    // Calculate sines / cosines of angles
+    const auto sineAzimuth = sin(azimuthAngle_);
+    const auto cosineAzimuth = cos(azimuthAngle_);
+    const auto sinePolar = sin(polarAngle_);
+    const auto cosinePolar = cos(polarAngle_);
+
+    // Calculate eye position out of them
+    const auto x = center_.x() + radius_ * cosinePolar * cosineAzimuth;
+    const auto y = center_.y() + radius_ * sinePolar;
+    const auto z = center_.z() + radius_ * cosinePolar * sineAzimuth;
+
+    // apply the new position
+    position_ = Vector3f(x,y,z);
+
+    // apply new orientation
+    forward_ = (center_ - position_).normalized();
+    Vector3f right = forward_.cross(Vector3f(0,1,0));
+    up_ = right.cross(forward_);
 }
 
 Eigen::Matrix4f Camera::getWorldToCamera(void) const

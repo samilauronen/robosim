@@ -33,7 +33,7 @@ Application::Application():
 	drawmode_(DrawMode::MODE_MESH),
 	shading_toggle_(false),
 	shading_mode_changed_(false),
-	camera_(Vector3f(0.0f, 0.0f, 1.5f))
+	camera_(Vector3f(1, 0, 0), 4.0f, M_PI / 4, M_PI / 6)
 {
 	robot_ = std::make_unique<Robot>("src/resources/params.txt", Vector3f(1, 0, 0));
 

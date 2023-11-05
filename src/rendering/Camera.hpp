@@ -7,8 +7,8 @@ class Camera
 {
 public:
 	Camera(
-		const Eigen::Vector3f& position,
-		const Eigen::Vector3f& forward = Eigen::Vector3f(0.0f, 0.0f, -1.0f),
+		const Eigen::Vector3f& center, const float radius,
+		const float azimuth, const float polar,
 		const Eigen::Vector3f& up = Eigen::Vector3f(0.0f, 1.0f, 0.0f),
 		float speed = 6.0f, float mouse_sensitivity = 0.01f
 	);
@@ -29,11 +29,17 @@ public:
 	void update(float dt, GLFWwindow* window);
 
 private:
-	Eigen::Vector3f position_;
+	Eigen::Vector3f position_;	// Position of the camera
+	Eigen::Vector3f center_;	// Center of the orbit camera sphere (the point upon which the camera looks)
 	Eigen::Vector3f forward_;
 	Eigen::Vector3f up_;
 
-	bool dragLeft_, dragMiddle_, dragRight_;
+    float radius_; 			// Radius of the orbit camera sphere
+    float _minRadius;	 	// Minimal radius of the orbit camera sphere (cannot fall below this value)
+    float azimuthAngle_; 	// Azimuth angle on the orbit camera sphere
+    float polarAngle_;	 	// Polar angle on the orbit camera sphere
+
+	bool dragLeft_, dragMiddle_, dragRight_, shiftDown_;
 
 	float fov_, near_, far_;
 
