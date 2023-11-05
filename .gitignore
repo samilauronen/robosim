@@ -10,6 +10,8 @@
 # Visual Studio temp file (only when VS open)
 *.opensdf
 
+robosim
+
 # directories
 .vs
 bin/

@@ -276,16 +276,16 @@ void Application::run(void) {
 					PushID(i);
 					TableNextRow();
 					TableNextColumn();
-					TableSetupColumn("", 0, 10);
+					//TableSetupColumn("", 0, 10);
 					Text("joint %d", i);
 					TableNextColumn();
-					TableSetupColumn("a", 0, 10);
+					//TableSetupColumn("a", 0, 10);
 					InputFloat("##a", &robot_params[i].a);
 					TableNextColumn();
-					TableSetupColumn("b", 0, 10);
+					//TableSetupColumn("b", 0, 10);
 					InputFloat("##b", &robot_params[i].d);
 					TableNextColumn();
-					TableSetupColumn("c", 0, 10);
+					//TableSetupColumn("c", 0, 10);
 					InputFloat("##c", &robot_params[i].alpha);
 					PopID();
 				}
