@@ -164,7 +164,7 @@ void Application::initRendering()
 	glEnableVertexAttribArray(ATTRIB_NORMAL);
 	glVertexAttribPointer(ATTRIB_NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, normal));
 	glEnableVertexAttribArray(ATTRIB_COLOR);
-	glVertexAttribPointer(ATTRIB_COLOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, color));
+	glVertexAttribPointer(ATTRIB_COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, color));
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
@@ -449,12 +449,12 @@ void Application::render(void) {
 
 	temp += 0.0001;
 	Vector3f lightpos = Vector3f(6 * sin(temp), 3.5, 6 * cos(temp));
-	BoxMesh lightmesh = BoxMesh(0.2, 0.2, 0.2, Vector3f(1, 1, 1));
+	BoxMesh lightmesh = BoxMesh(0.2, 0.2, 0.2, Vector4f(1, 1, 1, 1));
 	lightmesh.transform(Translation3f(lightpos) * AngleAxisf::Identity());
 	std::vector<Vertex> lightverts = lightmesh.getVertices();
 	vertices.insert(vertices.end(), lightverts.begin(), lightverts.end());
 
-	SphereMesh ikmesh = SphereMesh(0.01, Vector3f(1, 0.2, 0.2));
+	SphereMesh ikmesh = SphereMesh(0.01, Vector4f(1, 0.2, 0.2, 1.0));
 	ikmesh.transform(Translation3f(ray_end_) * AngleAxisf::Identity());
 	std::vector<Vertex> ikverts = ikmesh.getVertices();
 	vertices.insert(vertices.end(), ikverts.begin(), ikverts.end());
@@ -466,7 +466,7 @@ void Application::render(void) {
 
 	for (int i = 0; i < grid_size; i++) {
 		for (int j = 0; j < grid_size; j++) {
-			Vector3f color = (i + j) % 2 == 0 ? Vector3f(0.8, 0.8, 0.8) : Vector3f(0.3, 0.3, 0.3);
+			Vector4f color = (i + j) % 2 == 0 ? Vector4f(0.8, 0.8, 0.8, 1.0) : Vector4f(0.3, 0.3, 0.3, 1.0);
 
 			// left triangle
 			Vertex p1, p2, p3;
@@ -493,11 +493,14 @@ void Application::render(void) {
 	}
 	vertices.insert(vertices.end(), planeVerts.begin(), planeVerts.end());
 
-	SphereMesh sphere(0.2f, { 0.0, 0.5, 0 });
+	SphereMesh sphere(0.2f, { 0.0, 0.5, 0, 0.5});
 	Affine3f t = AngleAxisf::Identity() * Translation3f(0, 0.2, 0);
 	sphere.setToWorldTransform(t);
 	std::vector<Vertex> sphere_verts = sphere.getVertices();
 	vertices.insert(vertices.end(), sphere_verts.begin(), sphere_verts.end());
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	checkGlErrors();
 

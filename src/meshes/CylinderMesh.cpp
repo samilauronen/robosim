@@ -5,7 +5,7 @@
 
 using namespace Eigen;
 
-CylinderMesh::CylinderMesh(float radius, float length, Vector3f color, int subdivisions):
+CylinderMesh::CylinderMesh(float radius, float length, Vector4f color, int subdivisions):
 	Mesh(),
 	color_(color),
 	radius_(radius),

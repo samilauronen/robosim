@@ -3,7 +3,7 @@
 
 class BoxMesh : public Mesh {
 public:
-	BoxMesh(float width, float height, float length, Eigen::Vector3f color);
+	BoxMesh(float width, float height, float length, Eigen::Vector4f color);
 private:
 	
 	float width_, height_, length_;

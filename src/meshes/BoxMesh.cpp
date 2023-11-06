@@ -2,7 +2,7 @@
 
 using namespace Eigen;
 
-BoxMesh::BoxMesh(float width, float height, float length, Vector3f color) :
+BoxMesh::BoxMesh(float width, float height, float length, Vector4f color) :
 	Mesh(),
 	width_(width),
 	height_(height),

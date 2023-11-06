@@ -9,7 +9,7 @@ struct Vertex
 {
 	Eigen::Vector3f position;
 	Eigen::Vector3f normal;
-	Eigen::Vector3f color;
+	Eigen::Vector4f color;
 };
 
 class Mesh {

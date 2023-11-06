@@ -4,8 +4,8 @@
 
 using namespace Eigen;
 
-const Vector3f JointedLinkMesh::JOINT_COLOR = Vector3f(0.05, 0.6, 0.4);
-const Vector3f JointedLinkMesh::LINK_COLOR = Vector3f(0.9, 0.5, 0);
+const Vector4f JointedLinkMesh::JOINT_COLOR = Vector4f(0.05, 0.6, 0.4, 1.0);
+const Vector4f JointedLinkMesh::LINK_COLOR = Vector4f(0.9, 0.5, 0, 1.0);
 
 
 JointedLinkMesh::JointedLinkMesh(float z_len, float x_len, int link_number):

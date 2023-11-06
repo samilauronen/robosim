@@ -5,7 +5,7 @@
 
 using namespace Eigen;
 
-SphereMesh::SphereMesh(float radius, Vector3f color, int angle_subdivisions) :
+SphereMesh::SphereMesh(float radius, Vector4f color, int angle_subdivisions) :
 	Mesh(),
 	color_(color),
 	radius_(radius)
