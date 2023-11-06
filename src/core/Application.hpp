@@ -8,6 +8,8 @@
 #include "rendering/Camera.hpp"
 #include "rendering/Shader.hpp"
 
+#include "Event.hpp"
+
 
 class Application
 {
@@ -47,6 +49,8 @@ public:
 	void			abortRunningIkSolution();
 	void			mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 	void			setIkTarget();
+
+	void			handleEvent(const Event& ev);
 
 private:
 	Application(const Application&); // forbid copy

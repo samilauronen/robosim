@@ -14,6 +14,8 @@
 #include "meshes/BoxMesh.hpp"
 #include "meshes/SphereMesh.hpp"
 
+#include "EventDispatcher.hpp"
+
 using namespace Eigen;
 
 namespace {
@@ -66,6 +68,13 @@ void Application::createWindow(int width, int height) {
 	glfwMakeContextCurrent(window_);
 
 	glfwSetWindowUserPointer(window_, this);
+
+	// Setup event handling
+	EventDispatcher::SetApplication(this);
+	glfwSetKeyCallback(window_, EventDispatcher::KeyboardCallback);
+	glfwSetCursorPosCallback(window_, EventDispatcher::MouseMovedCallback);
+	glfwSetMouseButtonCallback(window_, EventDispatcher::MouseButtonCallback);
+	glfwSetScrollCallback(window_, EventDispatcher::MouseScrolledCallback);
 
 	// Imgui setup
 	IMGUI_CHECKVERSION();
@@ -136,15 +145,27 @@ void Application::createWindow(int width, int height) {
 		exit(EXIT_FAILURE);
 	}
 
-	// registe callbacks
-	glfwSetMouseButtonCallback(window_,
-		[](GLFWwindow* w, int button, int action, int mods)
-		{
-			static_cast<Application*>(glfwGetWindowUserPointer(w))->mouseButtonCallback(w, button, action, mods);
-		}
-	);
+	// registe callback (old)
+	// glfwSetMouseButtonCallback(window_,
+	// 	[](GLFWwindow* w, int button, int action, int mods)
+	// 	{
+	// 		static_cast<Application*>(glfwGetWindowUserPointer(w))->mouseButtonCallback(w, button, action, mods);
+	// 	}
+	// );
 
 	initRendering();
+}
+
+void Application::handleEvent(const Event& ev)
+{
+	camera_.handleEvent(ev);
+	
+	// handle right mouse clicks
+	if (ev.type == EventType::KEY_DOWN && ev.key == GLFW_MOUSE_BUTTON_RIGHT)
+	{
+		setIkTarget();
+		running_ik_solution_ = true;
+	}
 }
 
 void Application::initRendering()
@@ -336,15 +357,6 @@ void Application::update(float dt)
 
 	camera_.update(dt, window_);
 	robot_->update(dt);
-}
-
-void Application::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-{
-	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
-	{
-		setIkTarget();
-		running_ik_solution_ = true;
-	}
 }
 
 void Application::setIkTarget() {

@@ -3,6 +3,8 @@
 #include "GLFW/glfw3.h"
 #include "Eigen/Dense"
 
+#include "core/Event.hpp"
+
 class Camera
 {
 public:
@@ -27,6 +29,8 @@ public:
 	Eigen::Matrix3f getOrientation() const;
 
 	void update(float dt, GLFWwindow* window);
+
+	void handleEvent(const Event& ev);
 
 private:
 	Eigen::Vector3f position_;	// Position of the camera

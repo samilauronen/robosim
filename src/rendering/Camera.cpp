@@ -43,73 +43,78 @@ Camera::Camera(
     forward_ = (center_ - position_).normalized();
 }
 
-void Camera::update(float dt, GLFWwindow* window)
+void Camera::handleEvent(const Event& ev)
 {
-    // check if mouse is dragged with a button pressed
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)   == GLFW_PRESS)   dragLeft_ = true;
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS)   dragMiddle_ = true;
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)    dragRight_ = true;
-    // check if released
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)   dragLeft_ = false;
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_RELEASE) dragMiddle_ = false;
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT)  == GLFW_RELEASE) dragRight_ = false;
-
-    // check keyboard button presses and releases
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)    shiftDown_ = true;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)  shiftDown_ = false;
-
-
-
-    // calculate mouse delta
-    double mouse_x, mouse_y;
-    glfwGetCursorPos(window, &mouse_x, &mouse_y);
-    Vector3f delta = Vector3f(mouse_x - last_mouse_pos.x(), last_mouse_pos.y() - mouse_y, 0.0f);
-    last_mouse_pos.x() = mouse_x;
-    last_mouse_pos.y() = mouse_y;
-
-    // movement
-    if (dragMiddle_)
-    {
-        if (shiftDown_)
+    switch (ev.type) {
+        case EventType::KEY_DOWN:
+            if (ev.key == GLFW_MOUSE_BUTTON_LEFT)    dragLeft_ = true;
+            if (ev.key == GLFW_MOUSE_BUTTON_MIDDLE)  dragMiddle_ = true;
+            if (ev.key == GLFW_MOUSE_BUTTON_RIGHT)   dragRight_ = true;
+            if (ev.key == GLFW_KEY_LEFT_SHIFT)       shiftDown_ = true;
+            break;
+        case EventType::KEY_UP:
+            if (ev.key == GLFW_MOUSE_BUTTON_LEFT)    dragLeft_ = false;
+            if (ev.key == GLFW_MOUSE_BUTTON_MIDDLE)  dragMiddle_ = false;
+            if (ev.key == GLFW_MOUSE_BUTTON_RIGHT)   dragRight_ = false;
+            if (ev.key == GLFW_KEY_LEFT_SHIFT)       shiftDown_ = false;
+            break;
+        case EventType::MOUSE_MOVED:
         {
-            // move center of rotation
-        }
-        else
-        {
-            // rotate azimuth by mouse delta in that direction
-            azimuthAngle_ += mouse_sensitivity_ * delta.x();
+            Vector3f delta = Vector3f(ev.mouse_pos.x() - last_mouse_pos.x(), last_mouse_pos.y() - ev.mouse_pos.y(), 0.0f);
+            last_mouse_pos.x() = ev.mouse_pos.x();
+            last_mouse_pos.y() = ev.mouse_pos.y();
 
-            // Keep azimuth angle within range <0..2PI) - it's not necessary, just to have it nicely output
-            const auto fullCircle = 2.0f * M_PI;
-            azimuthAngle_ = fmodf(azimuthAngle_, fullCircle);
-            if (azimuthAngle_ < 0.0f)
+            if (dragMiddle_)
             {
-                azimuthAngle_ = fullCircle + azimuthAngle_;
+                if (shiftDown_)
+                {
+                    // move center of rotation
+                    center_ -= up_ * mouse_sensitivity_ * delta.y();
+
+                    Vector3f strafeVector = forward_.cross(up_).normalized();
+                    center_ -= strafeVector * mouse_sensitivity_ * delta.x();
+                }
+                else
+                {
+                    // rotate azimuth by mouse delta in that direction
+                    azimuthAngle_ += mouse_sensitivity_ * delta.x();
+
+                    // Keep azimuth angle within range <0..2PI) - it's not necessary, just to have it nicely output
+                    const auto fullCircle = 2.0f * M_PI;
+                    azimuthAngle_ = fmodf(azimuthAngle_, fullCircle);
+                    if (azimuthAngle_ < 0.0f)
+                    {
+                        azimuthAngle_ = fullCircle + azimuthAngle_;
+                    }
+
+                    polarAngle_ -= mouse_sensitivity_ * delta.y();
+
+                    // Check if the angle hasn't exceeded quarter of a circle to prevent flip, add a bit of epsilon like 0.001 radians
+                    const auto polarCap = M_PI / 2.0f - 0.001f;
+                    if (polarAngle_ > polarCap) {
+                        polarAngle_ = polarCap;
+                    }
+
+                    if (polarAngle_ < -polarCap) {
+                        polarAngle_ = -polarCap;
+                    }
+                }
             }
-
-            polarAngle_ -= mouse_sensitivity_ * delta.y();
-
-            // Check if the angle hasn't exceeded quarter of a circle to prevent flip, add a bit of epsilon like 0.001 radians
-            const auto polarCap = M_PI / 2.0f - 0.001f;
-            if (polarAngle_ > polarCap) {
-                polarAngle_ = polarCap;
+            break;
+        }
+        case EventType::MOUSE_SCROLLED:
+        {
+            radius_ -=  ev.scroll_amount;
+            if (radius_ < _minRadius) {
+                radius_ = _minRadius;
             }
-
-            if (polarAngle_ < -polarCap) {
-                polarAngle_ = -polarCap;
-            }
-
+            break;
         }
     }
+}
 
-    // check movement keys and set movement vector
-    // if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) move.x() -= 1.0f;
-    // if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) move.x() += 1.0f;
-    // if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) move.y() -= 1.0f;
-    // if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) move.y() += 1.0f;
-    // if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) move.z() -= 1.0f;
-    // if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) move.z() += 1.0f;
-
+void Camera::update(float dt, GLFWwindow* window)
+{
     // Calculate sines / cosines of angles
     const auto sineAzimuth = sin(azimuthAngle_);
     const auto cosineAzimuth = cos(azimuthAngle_);
