@@ -17,14 +17,14 @@ public:
 
 	void setSpeed(float new_speed) { speed_ = new_speed; };
 	void setMouseSensitivity(float new_sensitivity) { mouse_sensitivity_ = new_sensitivity; };
+	void setAspectRatio(float aspect) { aspect_ = aspect; };
 
 	float			getFOV() const { return fov_; };
 	Eigen::Vector3f getUp() const { return up_; };
 	Eigen::Vector3f getForward() const { return forward_; };
 	Eigen::Vector3f getPosition() const { return position_; };
-	Eigen::Matrix4f getWorldToCamera() const;
-	Eigen::Matrix4f getCameraToClip() const;
-	Eigen::Matrix4f getWorldToClip() const { return getCameraToClip() * getWorldToCamera(); }
+	Eigen::Matrix4f getViewMatrix() const;
+	Eigen::Matrix4f getProjectionMatrix() const;
 
 	Eigen::Matrix3f getOrientation() const;
 
@@ -45,7 +45,7 @@ private:
 
 	bool dragLeft_, dragMiddle_, dragRight_, shiftDown_;
 
-	float fov_, near_, far_;
+	float fov_, near_, far_, aspect_;
 
 	Eigen::Vector2d last_mouse_pos;
 

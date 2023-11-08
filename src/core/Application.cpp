@@ -367,34 +367,25 @@ void Application::setIkTarget() {
 	glfwGetFramebufferSize(window_, &window_width, &window_height);
 	float x = mouse_pos.x() / window_width;
 	float y = mouse_pos.y() / window_height;
-	x = x * 2 - 1;
+	x = x * 2.0f - 1.0f;
+	y = 1.0f - (2.0f * y);
 
-	// TODO: fix this, should not need to be divided by this magic number, and doesn't work with different window sizes
-	y = -(y * 2 - 1) / 1.875; 
+	Vector4f ray_clip = {x, y, -1.0f, 1.0f};
+	Vector4f ray_eye = camera_.getProjectionMatrix().inverse() * ray_clip;
+	ray_eye.z() = -1.0;
+	ray_eye.w() = 0.0;
 
-	// grab camera attributes
-	float fov = camera_.getFOV() * M_PI / 180; // damn thing was in degrees!
-	Vector3f up = camera_.getUp();
-	Vector3f direction = camera_.getForward();
-	Vector3f horizontal = direction.cross(up);
-	Vector3f position = camera_.getPosition();
+	Vector3f ray_world = (camera_.getViewMatrix().inverse() * ray_eye).head<3>();
+	ray_world.normalize();
 
-	// calculate distance from "image plane"
-	float dist = 1 / tan(fov / 2);
+	Vector3f camera_position = camera_.getPosition();
 
-	// create ray
-	Vector3f x_vec = x * horizontal.normalized();
-	Vector3f y_vec = y * up.normalized();
-	Vector3f dist_vec = dist * direction.normalized();
-	Vector3f ray_vec = (dist_vec + x_vec + y_vec).normalized();
-
-	// ray should ge going from [position] towards [ray_vec]
-	float t = 1;
-	ray_start_ = position;
-	ray_end_ = position + ray_vec * t;
+	// ray should ge going from [camera_position] towards [ray_world]
+	float t = 2;
+	ray_start_ = camera_position;
+	ray_end_ = camera_position + ray_world * t;
 
 	robot_->setTargetTcpPosition(ray_end_);
-	std::cout << "hello" << std::endl;
 }
 
 void Application::abortRunningIkSolution() {
@@ -437,21 +428,16 @@ void Application::render(void) {
 	glViewport(0, 0, screenWidth, screenHeight);
 	float fAspect = float(screenWidth) / screenHeight;
 
+	camera_.setAspectRatio(fAspect);
+
 	checkGlErrors();
 
 	// Set up transform matrices.
 	// They will be fed to the shader program via uniform variables.
 
 	// World space -> clip space transform: simple projection and camera.
-	Matrix4f C = camera_.getWorldToClip();
-
-	Matrix4f P;
-	static const float fNear = 0.3f, fFar = 4.0f;
-	P.col(0) = Vector4f(1, 0, 0, 0);
-	P.col(1) = Vector4f(0, fAspect, 0, 0);
-	P.col(2) = Vector4f(0, 0, (fFar + fNear) / (fFar - fNear), 1);
-	P.col(3) = Vector4f(0, 0, -2 * fFar * fNear / (fFar - fNear), 0);
-
+	Matrix4f C = camera_.getViewMatrix();
+	Matrix4f P = camera_.getProjectionMatrix();
 
 	if (drawmode_ == DrawMode::MODE_MESH_WIREFRAME) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

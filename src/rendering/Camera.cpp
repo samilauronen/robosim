@@ -18,8 +18,9 @@ Camera::Camera(
     up_(up),
     mouse_sensitivity_(mouse_sensitivity),
     fov_(70.0f),
-    near_(0.001f),
-    far_(3.0f),
+    near_(0.3f),
+    far_(50.0f),
+    aspect_(16/9),
     dragLeft_(false),
     dragMiddle_(false),
     dragRight_(false),
@@ -135,7 +136,7 @@ void Camera::update(float dt, GLFWwindow* window)
     up_ = right.cross(forward_);
 }
 
-Eigen::Matrix4f Camera::getWorldToCamera(void) const
+Eigen::Matrix4f Camera::getViewMatrix(void) const
 {
     Matrix3f orient = getOrientation();
     Vector3f pos = orient.transpose() * position_;
@@ -145,7 +146,7 @@ Eigen::Matrix4f Camera::getWorldToCamera(void) const
     return r.matrix();
 }
 
-Eigen::Matrix4f Camera::getCameraToClip() const
+Eigen::Matrix4f Camera::getProjectionMatrix() const
 {
     // Camera points towards -z.  0 < near < far.
     // Matrix maps z range [-near, -far] to [-1, 1], after homogeneous division.
@@ -156,11 +157,10 @@ Eigen::Matrix4f Camera::getCameraToClip() const
 
     Matrix4f r;
     r.row(0) = Vector4f(f, 0.0f, 0.0f, 0.0f);
-    r.row(1) = Vector4f(0.0f, f, 0.0f, 0.0f);
+    r.row(1) = Vector4f(0.0f, f * aspect_, 0.0f, 0.0f);
     r.row(2) = Vector4f(0.0f, 0.0f, (near_ + far_) * d, 2.0f * near_ * far_ * d);
     r.row(3) = Vector4f(0.0f, 0.0f, -1.0f, 0.0f);
     return r;
-    return Matrix4f{};
 }
 
 
