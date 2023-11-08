@@ -42,7 +42,9 @@ public:
 	std::vector<Vertex>		getMeshVertices() const;
 
 	size_t					getNumJoints() const { return links_.size(); };
+
 	Eigen::Affine3f			getWorldToBase() const { return worldToBase_; };
+	void 					setWorldToBase(Eigen::Affine3f worldToBase) { worldToBase_ = worldToBase; };
 
 	// for editing robot params with GUI
 	std::vector<DhParam>	getDhParams() const {

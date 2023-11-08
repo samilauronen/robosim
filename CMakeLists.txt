@@ -26,10 +26,24 @@ set(SOURCES
     src/meshes/JointedLinkMesh.cpp
     src/meshes/Mesh.cpp
     src/meshes/SphereMesh.cpp
-    src/rendering/Camera.cpp
+    src/rendering/Camera.cpp 
 )
 
-include_directories(${PROJECT_SOURCE_DIR}/src)
+
+include_directories(
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/lib/imgui/imgui
+    ${PROJECT_SOURCE_DIR}/lib/ImGuizmo
+)
+
+add_library(ImGuizmo lib/ImGuizmo/ImGuizmo.cpp)
+target_link_libraries(
+    ImGuizmo 
+    PRIVATE
+        imgui::imgui
+        imgui::imgui_impl_glfw
+        imgui::imgui_impl_opengl3
+)
 
 add_executable(robosim ${SOURCES})
 
@@ -43,6 +57,7 @@ target_link_libraries(
         imgui::imgui_impl_glfw
         imgui::imgui_impl_opengl3
         Eigen3::Eigen
+        ImGuizmo
 )
 
 

@@ -5,6 +5,8 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
+#include "ImGuizmo.h"
+
 #define GLEW_STATIC
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
@@ -235,6 +237,33 @@ void Application::run(void) {
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
 			NewFrame();
+			ImGuizmo::BeginFrame();
+
+			// ImGuizmo
+			ImGuizmo::SetOrthographic(false);
+			ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());
+
+			int screenWidth, screenHeight;
+			glfwGetFramebufferSize(window_, &screenWidth, &screenHeight);
+			// glViewport(0, 0, screenWidth, screenHeight);
+
+			ImGuizmo::SetRect(0, 0, screenWidth, screenHeight);
+			Eigen::Matrix4f robot_transform = robot_->getWorldToBase().matrix();
+			Eigen::Matrix4f camera_view = camera_.getViewMatrix();
+			Eigen::Matrix4f camera_projection = camera_.getProjectionMatrix();
+
+			ImGuizmo::Manipulate(
+				camera_view.data(),
+				camera_projection.data(),
+				ImGuizmo::OPERATION::TRANSLATE,
+				ImGuizmo::LOCAL,
+				robot_transform.data()
+			);
+
+			if (ImGuizmo::IsUsing())
+			{
+				robot_->setWorldToBase(Eigen::Affine3f(robot_transform));
+			}
 
 			Begin("Joint angle controls:");
 			for (int i = 0; i < robot_->getNumJoints(); i++) {
